@@ -2,10 +2,9 @@
 # NB: models.py e db.py usano solo la stdlib (sqlite3, dataclasses): nessuna dep.
 # Le voci sotto servono ai moduli in arrivo (scraper, config loader, notifier).
 
-# --- scraper.py: fetch + parsing HTML (CLAUDE.md §7, §8) ---
+# --- scraper.py: client HTTP verso l'API JSON del PVP (CLAUDE.md §7, §8) ---
+# Nota: il PVP espone dati via API JSON, non HTML → basta httpx (niente BeautifulSoup).
 httpx>=0.27
-beautifulsoup4>=4.12
-lxml>=5.2
 
 # --- config loader (comuni.yaml, scoring.yaml) ---
 PyYAML>=6.0

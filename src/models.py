@@ -28,6 +28,10 @@ class Lotto:
     prezzo_base: float | None = None
     data_vendita: str | None = None  # ISO date, se disponibile
     raw_path: str | None = None      # percorso dell'HTML grezzo in raw/
+    # Transitori: usati dallo scraper per filtrare e per la logica "nuovi",
+    # NON persistiti nel DB di Fase 1 (tornano None se riletti dal DB).
+    categoria: str | None = None          # es. "IMMOBILE_RESIDENZIALE"
+    data_pubblicazione: str | None = None  # ISO date
     # Popolati dal DB, non dallo scraper:
     id: int | None = None
     prima_vista_il: str | None = None
