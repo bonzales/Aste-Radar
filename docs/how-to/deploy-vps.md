@@ -33,18 +33,21 @@ Compila:
 ```
 TELEGRAM_BOT_TOKEN=<il tuo token>
 TELEGRAM_CHAT_ID=<il tuo chat_id>
+ANTHROPIC_API_KEY=<la tua chiave IA>
 ```
 (`config/secrets.env` è in .gitignore: resta solo sul server, non va su GitHub.)
 
-## 4. Prova manuale (prima di automatizzare)
+## 4. Primo giro completo (lungo, in background)
 
+Il primo avvio fa il **backfill di ~6 mesi** e analizza a fondo ogni perizia:
+1-3 ore. Lancialo in background così sopravvive alla disconnessione:
 ```bash
 mkdir -p logs
-python -m src.main
+nohup python -m src.main >> logs/aste.log 2>&1 &
+tail -f logs/aste.log     # segui l'avanzamento (Ctrl+C per smettere di guardare)
 ```
-Atteso: `[aste-radar] trovati=.. nuovi=.. notificati=..` e le notifiche su
-Telegram. Al **primo avvio** arriva l'arretrato degli ultimi 7 giorni: normale.
-Se qualcosa va storto ricevi `⚠️ Scansione aste fallita: <motivo>` (fail loud).
+A fine giro: riga `[aste-radar] finestra=180gg ...` nel log e i lotti ✅/⚠️ su
+Telegram. Su errore ricevi `⚠️ Scansione aste fallita: <motivo>` (fail loud).
 
 ## 5. La sveglia: cron SETTIMANALE (sabato 07:00)
 

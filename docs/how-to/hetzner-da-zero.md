@@ -55,7 +55,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**d) Inserire i segreti del bot Telegram:**
+**d) Inserire i segreti (bot Telegram + chiave IA):**
 ```bash
 cp config/secrets.env.example config/secrets.env
 nano config/secrets.env
@@ -64,17 +64,32 @@ Si apre un editor: scrivi i tuoi valori dopo il `=`
 ```
 TELEGRAM_BOT_TOKEN=8299627842:....
 TELEGRAM_CHAT_ID=1288729394
+ANTHROPIC_API_KEY=sk-ant-....
 ```
 Salva con **Ctrl+O** poi Invio, esci con **Ctrl+X**.
+(La chiave IA serve per leggere e analizzare le perizie. Costo: pochi euro/mese.)
 
-## 4. Prova che funzioni (una volta, a mano)
+## 4. Il PRIMO GIRO completo (lungo — lascialo lavorare in background)
+
+Il primo avvio recupera **~6 mesi** di aste ancora aperte e le analizza tutte a
+fondo (scarica e legge ogni perizia): **può volerci 1-3 ore**. Va lanciato in
+"background" così continua anche se chiudi la finestra:
 
 ```bash
 mkdir -p logs
-python -m src.main
+nohup python -m src.main >> logs/aste.log 2>&1 &
 ```
-Se tutto va bene vedi una riga tipo `[aste-radar] trovati=.. nuovi=.. notificati=..`
-e ti arrivano i lotti su Telegram. (Al primo avvio arriva l'arretrato: normale.)
+Il `&` finale lo manda in background e ti ridà subito il comando. Per vedere come
+procede:
+```bash
+tail -f logs/aste.log      # scorre il log in tempo reale; esci con Ctrl+C
+```
+Quando finisce, nel log compare la riga `[aste-radar] finestra=180gg ...` e su
+Telegram ti sono arrivati i lotti promossi (✅) e quelli da verificare (⚠️).
+Da quel momento le aste di oggi sono "archiviate": i giri dopo mandano solo le novità.
+
+> Puoi chiudere la connessione SSH: grazie a `nohup` il primo giro continua sul
+> server. Ricontrolla il log più tardi con `tail -n 40 logs/aste.log`.
 
 ## 5. Accendere la "sveglia" (sabato 07:00)
 
