@@ -30,7 +30,16 @@ generato (CLAUDE.md §1.1).
 
 - **Scansioni vs PDF nativo** — molte perizie sono scansioni: servono
   `pdftoppm` + Tesseract (CLAUDE.md §7). Il testo nativo, se c'è, è più affidabile:
-  provarlo prima di ricorrere all'OCR.
+  provarlo prima di ricorrere all'OCR. **CONFERMATO sul campo (2026-07-05)**: la
+  prima perizia scaricata (lotto 4604105, Venezia-Giudecca) è una scansione pura
+  (0 caratteri nativi su 89 pagine) → OCR obbligatorio. `src/parser.py` decide
+  pagina-per-pagina (nativo se c'è, altrimenti OCR ita).
+- **Pagine di firma/timbro digitale** — l'OCR le rende come "rumore" (caratteri
+  sparsi). Normale: le pagine di contenuto (stima, descrizione) escono pulite.
+  L'estrattore LLM tollera bene questo rumore. Non tentare di ripulirlo a regex.
+- **La perizia può includere allegati eterogenei** — il PDF "perizia" spesso
+  contiene anche planimetrie, visure, foto: l'estrazione LLM va guidata a cercare
+  i dati chiave in tutto il testo, non solo nelle prime pagine.
 - **Valore di stima vs prezzo base** — non confonderli: la stima è il valore
   peritale; il prezzo base è la soglia d'asta corrente (già ribassata). Lo sconto
   che conta è prezzo base / valore di stima.
