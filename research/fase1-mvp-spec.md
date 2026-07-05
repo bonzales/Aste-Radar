@@ -99,17 +99,17 @@ aggressivo. Salvare sempre l'HTML grezzo in `raw/` per ri-parsare offline.
 `db.py`), `notifier.py` (invio Telegram), `main.py` (orchestrazione idempotente +
 fail loud). `downloader.py`/`parser.py`/`extractor.py`/`scorer.py` NON in Fase 1.
 
-## Domande aperte per l'utente (bloccano/orientano l'implementazione)
+## Parametri confermati con l'utente (2026-07-05)
 
-1. **Chat Telegram**: riuso il bot Kraken esistente (stesso token/chat) o ne creo
-   uno dedicato ad aste-radar? (CLAUDE.md §6/§7 dicono "riusa il codice", ma il
-   canale può essere separato.)
-2. **Comuni TV limitrofi**: confermi la lista proposta in `config/comuni.yaml`
-   (Mogliano Veneto, Preganziol, Casale sul Sile, Casier, Silea, Zero Branco,
-   Quinto di Treviso) o la modifichi?
-3. **Frequenza cron**: 07:00 giornaliero come da §7, o altro orario?
-4. **Tipologia immobili**: solo residenziale (coerente col flip abitativo e
-   prezzo-valore) o anche altro (terreni, box, commerciale)?
+1. **Telegram**: bot **dedicato** ad aste-radar (token/chat separati dal bot
+   Kraken), ma riusando il codice del bot Kraken. → `config/secrets.env` avrà i
+   suoi `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` propri.
+2. **Comuni TV limitrofi**: confermati tutti e 7 (Mogliano Veneto, Preganziol,
+   Casale sul Sile, Casier, Silea, Zero Branco, Quinto di Treviso), `attivo: true`
+   in `config/comuni.yaml`.
+3. **Cron**: giornaliero alle **07:00**.
+4. **Tipologia**: solo **residenziale** (case/appartamenti). Box, commerciale,
+   terreni esclusi. Coerente col flip abitativo + prezzo-valore.
 
 ## Piano di attacco proposto (dopo l'ok)
 

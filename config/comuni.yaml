@@ -6,14 +6,13 @@
 # corrisponde alla ricerca immobili per provincia/comune (il tribunale è un dato
 # del lotto, non il filtro di ricerca).
 #
-# Zone target:
+# Zone target (confermate con l'utente 2026-07-05):
 #   - tutta la PROVINCIA di Venezia (VE) — l'utente è cresciuto a Mestre
 #   - il COMUNE di Treviso
-#   - i comuni della provincia di Treviso LIMITROFI alla provincia di Venezia
+#   - i comuni della provincia di Treviso limitrofi a VE (elencati sotto, attivi)
 #
-# NOTA (CLAUDE.md §1.2 non inventare): l'elenco `comuni_extra` qui sotto è una
-# PROPOSTA di comuni TV a ridosso del confine con VE — DA CONFERMARE con l'utente.
-# `attivo: false` finché non confermati/verificati sul PVP.
+# NOTA (CLAUDE.md §1.2): i nomi comune vanno usati come compaiono sul PVP.
+# Da verificare nello spike PVP che la ricerca accetti esattamente queste stringhe.
 
 geografia:
   # Province prese per intero (tutti i comuni).
@@ -29,38 +28,43 @@ geografia:
       motivo: "comune capoluogo richiesto esplicitamente"
       attivo: true
 
-    # --- Provincia di Treviso, fascia limitrofa a VE (PROPOSTA, da confermare) ---
+    # --- Provincia di Treviso, fascia limitrofa a VE (confermati 2026-07-05) ---
     - nome: Mogliano Veneto
       provincia: TV
       motivo: "confine sud-ovest con VE (Marcon/Venezia)"
-      attivo: false
+      attivo: true
     - nome: Preganziol
       provincia: TV
       motivo: "asse Treviso-Mestre"
-      attivo: false
+      attivo: true
     - nome: Casale sul Sile
       provincia: TV
       motivo: "esempio indicato dall'utente"
-      attivo: false
+      attivo: true
     - nome: Casier
       provincia: TV
       motivo: "limitrofo, area Silea/Sile"
-      attivo: false
+      attivo: true
     - nome: Silea
       provincia: TV
       motivo: "limitrofo lato est di Treviso verso VE"
-      attivo: false
+      attivo: true
     - nome: Zero Branco
       provincia: TV
       motivo: "fascia sud verso VE"
-      attivo: false
+      attivo: true
     - nome: Quinto di Treviso
       provincia: TV
       motivo: "fascia sud-ovest"
-      attivo: false
-    - nome: Scorzè
-      provincia: VE
-      motivo: "già in provincia VE (incluso dalla provincia), qui solo come nota di confine"
-      attivo: false
+      attivo: true
+
+# Tipologie di immobile da intercettare (confermato 2026-07-05: solo residenziale).
+# Coerente col flip abitativo e col vantaggio prezzo-valore (cat. A tranne A/10).
+# I codici/etichette esatti del PVP vanno mappati nello spike; qui l'intento.
+tipologie:
+  residenziale: true      # case, appartamenti, ville
+  box_garage: false
+  commerciale_uffici: false
+  terreni: false
 
 # Riferimento microzone e note per comune: research/comuni.md

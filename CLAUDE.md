@@ -320,9 +320,12 @@ Risolte il 2026-07-05 (dettagli nelle pagine `research/` indicate):
 - [x] **Modello LLM: Haiku 4.5 + escalation** sui casi difficili.
       (`research/perizie.md`)
 
+- [x] **Parametri Fase 1** (2026-07-05): bot Telegram **dedicato**; comuni TV
+      limitrofi tutti attivi (7); cron giornaliero **07:00**; tipologia **solo
+      residenziale**. (`research/fase1-mvp-spec.md`, `config/comuni.yaml`)
+
 Ancora aperte:
 
-- [ ] Confermare/rifinire l'elenco dei comuni TV limitrofi da attivare.
 - [ ] Pesi e soglie esatti della griglia (`config/scoring.yaml`): sconto minimo
       su stima, zone A/B/C, superficie min/max, categorie ammesse.
 
