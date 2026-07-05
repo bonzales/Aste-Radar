@@ -111,11 +111,30 @@ fail loud). `downloader.py`/`parser.py`/`extractor.py`/`scorer.py` NON in Fase 1
 4. **Tipologia**: solo **residenziale** (case/appartamenti). Box, commerciale,
    terreni esclusi. Coerente col flip abitativo + prezzo-valore.
 
-## Piano di attacco proposto (dopo l'ok)
+## Piano di attacco (stato al 2026-07-05)
 
-1. Spike PVP (capire come risponde) → decidere fonte/tecnica.
-2. `scraper.py` sulla ricerca geografica + fixture HTML in `raw/`.
-3. Layer DB + idempotenza.
-4. `notifier.py` (smoke test su Telegram).
-5. `main.py` orchestrazione + fail loud.
-6. Run manuale end-to-end, poi cron sul VPS.
+1. ~~Spike PVP~~ → **BLOCCATO da qui**: l'ambiente Claude Code on web nega
+   l'egress verso `pvp.giustizia.it` (proxy: 403 al CONNECT, policy di rete).
+   Lo spike va eseguito **sul VPS** (rete libera). Checklist sotto.
+2. `scraper.py` sulla ricerca geografica + fixture HTML in `raw/` → **da fare
+   dopo lo spike** (serve HTML reale, non inventato — §1.2).
+3. ~~Layer DB + idempotenza~~ → **FATTO**: `src/models.py` (`Lotto`), `src/db.py`
+   (`connect/init_db/upsert_lotto/lotti_da_notificare/segna_notificato`), test in
+   `tests/test_db.py` (7 test verdi, coprono no-duplicati / no-re-notifica).
+   Parti network-independent completate mentre lo spike è bloccato.
+4. `notifier.py` (smoke test su Telegram) → da fare (bot dedicato).
+5. `main.py` orchestrazione + fail loud → da fare.
+6. Run manuale end-to-end, poi cron sul VPS (07:00).
+
+### Checklist spike PVP (da eseguire sul VPS)
+
+1. Aprire a mano la ricerca immobili del PVP per "provincia = Venezia" e, con gli
+   strumenti di rete del browser, catturare la/le richieste reali: URL, metodo,
+   parametri (provincia, comune, tipologia=residenziale), header, eventuali token.
+2. Stabilire se la lista risultati è nell'HTML statico o caricata via JS/API
+   (se JS → valutare l'endpoint JSON sottostante o un browser headless).
+3. Individuare l'**identificativo stabile** del lotto per la deduplica
+   (`id_esterno`): id procedura + n. lotto, o id inserzione PVP.
+4. Salvare 2–3 pagine grezze (lista + dettaglio) in `raw/` come **fixture** per
+   scrivere il parser di `scraper.py` offline.
+5. Verificare che i nomi comune in `config/comuni.yaml` combacino con quelli del PVP.

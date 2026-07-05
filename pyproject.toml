@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# Rende importabile il package `src` senza installazione (import mode di pytest).
+pythonpath = ["."]
+testpaths = ["tests"]
