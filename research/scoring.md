@@ -31,18 +31,33 @@ Due livelli:
   scarto per uso proprio/turistico (`fiscale.md`).
 - **Abusi/difformità insanabili** — possono affondare l'operazione: scarto hard.
 
+## Obiettivo PRESO (2026-07-05): FLIP (rivendita <5 anni)
+
+La griglia si specializza sul **flip**, non sul reddito da locazione. Conseguenze
+sui criteri e sui pesi:
+
+- **Sconto sulla stima** = criterio dominante. È il margine lordo di partenza.
+- **Ristrutturabilità** conta: un immobile da rimettere a posto con costo
+  prevedibile e rivendibile in fretta batte uno "pronto" ma senza margine.
+- **Liberabilità rapida** pesa: il flip vuole possesso e cantiere presto; un
+  occupato che si libera in tempi lunghi erode il margine (costi di possesso).
+- **Fiscalità <5 anni**: la plusvalenza da rivendita entro 5 anni è tassata
+  (sostitutiva 26% o IRPEF, vedi `fiscale.md`). Il punteggio segnala il margine
+  LORDO; l'utile netto va sempre calcolato a parte (Fase 4, checklist costi).
+- Il rendimento locativo NON entra nella griglia (obiettivo diverso). Se in
+  futuro si volesse un secondo profilo "reddito", si annota qui come scelta nuova.
+
 ## Pesi soft — perché
 
-DA DECIDERE con l'utente (§12). Domanda a monte non ancora sciolta: la griglia
-serve **investimento a reddito**, **flip**, o entrambi? Cambia i pesi (rendita vs
-margine di rivendita). Vedi `fiscale.md` per la differenza fra margine teorico
-d'asta e utile netto.
+DA DECIDERE i numeri con l'utente (§12), ma con la bussola "flip" sopra. Vedi
+`fiscale.md` per la differenza fra margine teorico d'asta e utile netto.
 
 ## Decisioni aperte tracciate qui
 
-- [ ] Sconto minimo su stima (numero).
+- [x] Reddito vs flip → **FLIP** (2026-07-05). Griglia specializzata.
+- [ ] Sconto minimo su stima (numero) — criterio dominante per il flip.
 - [ ] Zone ammesse (A/B/C) — dipende da `comuni.md`.
 - [ ] Categorie catastali ammesse.
 - [ ] Superficie min/max.
 - [ ] Pesi soft e soglia di notifica.
-- [ ] Reddito vs flip: una griglia o due profili?
+- [ ] Come pesare ristrutturabilità e liberabilità (dati non sempre in perizia).

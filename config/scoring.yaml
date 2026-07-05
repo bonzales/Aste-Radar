@@ -10,6 +10,10 @@
 # NOTA anti-illusione (CLAUDE.md §5): i criteri "hard" sono gate binari. Un solo
 # criterio hard mancante = scarto silenzioso, niente notifica. Non ammorbidire.
 
+# Obiettivo (DECISO 2026-07-05): flip = rivendita entro 5 anni. La griglia si
+# specializza sul margine di rivendita, non sul reddito da locazione (research/scoring.md).
+obiettivo: flip
+
 tarato: false   # metti true solo dopo aver deciso e giustificato i valori
 
 # --- Criteri HARD (gate binari: se falliti, scarto silenzioso) ---

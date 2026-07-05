@@ -1,25 +1,66 @@
-# Comuni target + tribunale di competenza.
-# È la lista che lo scraper interroga (CLAUDE.md §3, §8).
+# Target GEOGRAFICO del radar (CLAUDE.md §3, §8).
 #
-# DECISIONE APERTA (CLAUDE.md §12): elenco definitivo dei comuni e verifica
-# della circoscrizione. Venezia copre Spinea/Martellago/Mirano/Mira/Dolo?
-# → NON inventare la competenza: confermare sul Portale Vendite Pubbliche
-#   (pvp.giustizia.it) prima di attivare lo scraper su un comune.
+# DECISIONE PRESA (2026-07-05): il filtro è l'UBICAZIONE DELL'IMMOBILE, NON il
+# tribunale. Un'asta gestita da un tribunale qualsiasi (anche Bologna) rientra se
+# l'immobile si trova nelle zone target. Sul Portale Vendite Pubbliche questo
+# corrisponde alla ricerca immobili per provincia/comune (il tribunale è un dato
+# del lotto, non il filtro di ricerca).
 #
-# Schema di ogni voce:
-#   - nome:        nome del comune (come compare sul PVP)
-#   - provincia:   sigla (es. VE)
-#   - tribunale:   tribunale competente (DA VERIFICARE, non assumere)
-#   - microzona:   nota libera / riferimento a research/comuni.md
-#   - attivo:      true = lo scraper lo interroga; false = in attesa di verifica
+# Zone target:
+#   - tutta la PROVINCIA di Venezia (VE) — l'utente è cresciuto a Mestre
+#   - il COMUNE di Treviso
+#   - i comuni della provincia di Treviso LIMITROFI alla provincia di Venezia
+#
+# NOTA (CLAUDE.md §1.2 non inventare): l'elenco `comuni_extra` qui sotto è una
+# PROPOSTA di comuni TV a ridosso del confine con VE — DA CONFERMARE con l'utente.
+# `attivo: false` finché non confermati/verificati sul PVP.
 
-comuni:
-  # --- DA COMPILARE E VERIFICARE CON L'UTENTE (CLAUDE.md §12) ---
-  # Esempio di struttura (NON attivo finché la competenza non è confermata):
-  #
-  # - nome: Spinea
-  #   provincia: VE
-  #   tribunale: "DA VERIFICARE"
-  #   microzona: "residenza utente — vantaggio informativo, vedi research/comuni.md"
-  #   attivo: false
-  []
+geografia:
+  # Province prese per intero (tutti i comuni).
+  province:
+    - sigla: VE
+      nome: Venezia
+      attivo: true
+
+  # Comuni fuori dalle province sopra, presi singolarmente.
+  comuni_extra:
+    - nome: Treviso
+      provincia: TV
+      motivo: "comune capoluogo richiesto esplicitamente"
+      attivo: true
+
+    # --- Provincia di Treviso, fascia limitrofa a VE (PROPOSTA, da confermare) ---
+    - nome: Mogliano Veneto
+      provincia: TV
+      motivo: "confine sud-ovest con VE (Marcon/Venezia)"
+      attivo: false
+    - nome: Preganziol
+      provincia: TV
+      motivo: "asse Treviso-Mestre"
+      attivo: false
+    - nome: Casale sul Sile
+      provincia: TV
+      motivo: "esempio indicato dall'utente"
+      attivo: false
+    - nome: Casier
+      provincia: TV
+      motivo: "limitrofo, area Silea/Sile"
+      attivo: false
+    - nome: Silea
+      provincia: TV
+      motivo: "limitrofo lato est di Treviso verso VE"
+      attivo: false
+    - nome: Zero Branco
+      provincia: TV
+      motivo: "fascia sud verso VE"
+      attivo: false
+    - nome: Quinto di Treviso
+      provincia: TV
+      motivo: "fascia sud-ovest"
+      attivo: false
+    - nome: Scorzè
+      provincia: VE
+      motivo: "già in provincia VE (incluso dalla provincia), qui solo come nota di confine"
+      attivo: false
+
+# Riferimento microzone e note per comune: research/comuni.md

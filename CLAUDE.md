@@ -309,12 +309,22 @@ li applica come definiti in `config/scoring.yaml` e spiegati in `research/scorin
 
 ## 12. Decisioni aperte (da sciogliere con l'utente)
 
-- [ ] Elenco definitivo dei comuni target + verifica tribunale competente
-      (Venezia copre Spinea/Martellago/Mirano/Mira/Dolo? confermare circoscrizione).
-- [ ] Pesi e soglie esatti della griglia (`config/scoring.yaml`): prezzo/valore
-      minimo, zone A/B/C, superficie min/max, categorie ammesse.
-- [ ] Modello LLM da usare per l'estrazione (costo vs accuratezza sulle perizie).
-- [ ] Investimento a reddito vs flip: la griglia serve entrambi o si specializza?
+Risolte il 2026-07-05 (dettagli nelle pagine `research/` indicate):
+
+- [x] **Target geografico, non per tribunale** → filtro sull'ubicazione
+      dell'immobile: tutta la provincia di Venezia + comune di Treviso + comuni
+      TV limitrofi. L'utente è cresciuto a Mestre. (`research/comuni.md`,
+      `config/comuni.yaml`)
+- [x] **Griglia specializzata sul FLIP** (rivendita <5 anni), non sul reddito.
+      (`research/scoring.md`, `config/scoring.yaml`)
+- [x] **Modello LLM: Haiku 4.5 + escalation** sui casi difficili.
+      (`research/perizie.md`)
+
+Ancora aperte:
+
+- [ ] Confermare/rifinire l'elenco dei comuni TV limitrofi da attivare.
+- [ ] Pesi e soglie esatti della griglia (`config/scoring.yaml`): sconto minimo
+      su stima, zone A/B/C, superficie min/max, categorie ammesse.
 
 > Aggiorna questa lista man mano che le decisioni vengono prese, spostando le
 > voci risolte nella pagina `research/` pertinente.

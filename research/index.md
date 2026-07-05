@@ -18,6 +18,8 @@ danni sulle aste e per non re-inventare ciò che è già stato deciso.
   parsing e OCR, formati ostici incontrati.
 - [`fiscale.md`](./fiscale.md) — note fisco: prezzo-valore, plusvalenza <5 anni,
   flip, P.IVA, costi accollati. Alimenta la griglia, non la sostituisce.
+- [`fase1-mvp-spec.md`](./fase1-mvp-spec.md) — spec della Fase 1 (MVP notifica
+  grezza): fonte, filtro geografico, schema DB, formato notifica, spike PVP.
 
 ## Come si usa
 

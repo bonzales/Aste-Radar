@@ -41,6 +41,15 @@ generato (CLAUDE.md §1.1).
 - **Difformità/abusi** — spesso in sezioni dedicate ("conformità edilizia/
   urbanistica/catastale"). Sanabile vs insanabile cambia tutto.
 
+## Modello LLM (DECISO 2026-07-05)
+
+Estrazione di massa con **Haiku 4.5** (economico, coerente con CLAUDE.md §7), con
+**escalation** a un modello più forte (Sonnet 5 / Opus 4.8) solo sui casi difficili.
+Trigger di escalation da definire sul campo, es.: troppi campi tornati `null` su una
+perizia che chiaramente li contiene, output non conforme allo schema JSON, bassa
+confidenza. L'escalation NON deve mai portare a inventare dati (§1.2): se il modello
+forte non trova il dato, resta `null`.
+
 ## Onestà tecnica (CLAUDE.md §10)
 
 Il parsing regex su perizie eterogenee è fragile: l'estrazione robusta passa per

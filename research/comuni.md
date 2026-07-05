@@ -13,14 +13,31 @@ Per ogni comune/microzona, annotare quando emerge dall'esperienza:
   dell'utente (centralità, servizi, domanda locativa/turistica, insidie).
 - **Note operative** — quartieri da evitare, aree alluvionali, cantieri, ecc.
 
-## Decisione aperta (CLAUDE.md §12)
+## Decisione PRESA (2026-07-05): filtro geografico, non per tribunale
 
-- [ ] Elenco definitivo dei comuni target.
-- [ ] Verifica circoscrizione: il Tribunale di Venezia copre
-      Spinea / Martellago / Mirano / Mira / Dolo? → confermare sul Portale
-      Vendite Pubbliche prima di attivare lo scraper su ciascuno.
+Il criterio di inclusione è **l'ubicazione dell'immobile**, NON il tribunale che
+gestisce la vendita. Un lotto di un tribunale qualsiasi (anche fuori regione)
+rientra se l'immobile è nelle zone target. → La questione "quale tribunale copre
+Spinea/Mirano/…" **non è più un gate**: si cerca per geografia sul PVP.
+
+Zone target:
+- **Tutta la provincia di Venezia (VE)**. L'utente è **cresciuto a Mestre**
+  (frazione del Comune di Venezia): massimo vantaggio informativo nell'area
+  mestrina e nella terraferma veneziana.
+- **Comune di Treviso** (capoluogo).
+- **Comuni della provincia di Treviso limitrofi a VE** — proposta iniziale in
+  `config/comuni.yaml` (`comuni_extra`, `attivo: false` finché non confermati):
+  Mogliano Veneto, Preganziol, Casale sul Sile, Casier, Silea, Zero Branco,
+  Quinto di Treviso. Da rivedere con l'utente.
+
+## Ancora da sciogliere
+
+- [ ] Confermare/rifinire l'elenco dei comuni TV limitrofi (attivarli in config).
+- [ ] Classificazione di zona (A/B/C) per la griglia — criterio dell'utente,
+      non inventato. Mestre/terraferma vs Venezia insulare vs entroterra hanno
+      dinamiche di flip molto diverse.
 
 ## Note per comune
 
-_(Vuoto: da compilare con l'utente. Non inventare competenze territoriali né
-classificazioni di zona — vanno dette dall'utente o verificate alla fonte.)_
+_(Da compilare con l'utente. Priorità: microzone dell'area mestrina/terraferma
+dove il vantaggio informativo è massimo. Non inventare classificazioni di zona.)_
