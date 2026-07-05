@@ -98,6 +98,14 @@ def esegui(client, ai_client, notifier, conn, target, griglia, *,
         db.segna_notificato(conn, lotto.id, now)
         notificati += 1
 
+    # Fail loud (§1.4): se OGNI analisi tentata è fallita, è un problema sistemico
+    # (chiave IA errata, rete, portale) — non fingere che "non ci fosse nulla".
+    if errori and not analizzati:
+        raise RuntimeError(
+            f"analisi fallita su tutti i {errori} lotti da analizzare "
+            f"(possibile chiave IA errata o problema di rete)"
+        )
+
     return {"trovati": len(lotti), "nuovi": nuovi, "analizzati": analizzati,
             "errori_analisi": errori, "notificati": notificati}
 

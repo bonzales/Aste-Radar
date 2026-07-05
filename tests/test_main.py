@@ -100,6 +100,16 @@ def test_funnel_idempotente_secondo_giro(conn, monkeypatch):
     assert n2.inviati == []
 
 
+def test_analisi_tutta_fallita_fa_fail_loud(conn, monkeypatch):
+    def _boom(*a, **k):
+        raise RuntimeError("chiave IA errata")
+    monkeypatch.setattr(main_mod, "_analizza_lotto", _boom)
+    target = TargetGeo(province_intere={"venezia"}, solo_residenziale=True)
+    with pytest.raises(RuntimeError, match="analisi fallita su tutti"):
+        main_mod.esegui(FakeClient(_content()), None, FakeNotifier(), conn, target,
+                        {"hard": {}}, giorni_indietro=14, prezzo_max=150000, now="2026-07-05T07:00:00")
+
+
 def test_lotto_scartato_non_si_notifica_ma_resta_analizzato(conn, monkeypatch):
     monkeypatch.setattr(main_mod, "_analizza_lotto", _stub_analisi)
     target = TargetGeo(province_intere={"venezia"}, solo_residenziale=True)
