@@ -1,0 +1,32 @@
+{
+  "body": {
+    "idVendita": 4604105,
+    "allegati": [
+      {
+        "idAllegato": 12428572,
+        "nomeFile": "Avviso di vendita Liquidazione n. 2 del 2021 del Tribunale di Roma.pdf",
+        "linkAllegato": "/allegati/4604105/Avviso di vendita Liquidazione n. 2 del 2021 del Tribunale di Roma.pdf?versionId=45bfad59-0428-4869-9d3a-db32d11c890f",
+        "dimensioneAllegato": 230293,
+        "codiceTipoAllegato": "ORDIN",
+        "inserimentoLotto": false
+      },
+      {
+        "idAllegato": 12428579,
+        "nomeFile": "all.2_regolamento_della_multiproprieta (1).pdf",
+        "linkAllegato": "/allegati/4604105/all.2_regolamento_della_multiproprieta (1).pdf?versionId=1d9fb782-2efd-4ed2-b4ac-2efe9bf1d501",
+        "dimensioneAllegato": 1303509,
+        "descrizione": "regolamento della multiproprieta'",
+        "codiceTipoAllegato": "ALTRO",
+        "inserimentoLotto": false
+      },
+      {
+        "idAllegato": 12428540,
+        "nomeFile": "perizia_con_allegati_venezia (1).pdf",
+        "linkAllegato": "/allegati/4604105/perizia_con_allegati_venezia (1).pdf?versionId=ab237b68-c12b-49c8-a93f-e214854a794a",
+        "dimensioneAllegato": 17492256,
+        "codiceTipoAllegato": "PERIZ",
+        "inserimentoLotto": false
+      }
+    ]
+  }
+}

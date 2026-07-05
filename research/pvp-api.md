@@ -126,6 +126,46 @@ https://pvp.giustizia.it/pvp/it/detail_annuncio.page?idAnnuncio=<id>
 
 Verificato `200`. Da qui l'umano apre il lotto e (Fase 2) si scaricano gli allegati.
 
+## Allegati del lotto (perizia, avviso, ecc.) — Fase 2
+
+Dettaglio pubblico del lotto (contiene l'elenco allegati):
+
+```
+GET https://pvp.giustizia.it/ve-3f723b85-986a1b71/ve-ms/vendite/<id>
+```
+
+Risposta `body.allegati[]`, ogni voce:
+
+```json
+{ "idAllegato": 12428540,
+  "nomeFile": "perizia_con_allegati_venezia (1).pdf",
+  "linkAllegato": "/allegati/4604105/perizia_...pdf?versionId=ab23...",
+  "dimensioneAllegato": 17492256,
+  "codiceTipoAllegato": "PERIZ" }
+```
+
+`codiceTipoAllegato`: **PERIZ** = perizia, **ORDIN** = ordinanza/avviso, **ALTRO**
+= altro (regolamenti, planimetrie…). Fixture: `tests/fixtures/pvp/dettaglio-allegati.json`.
+
+### Download del file
+
+Il file sta sul bucket pubblico **`resource-pvp.giustizia.it`**:
+
+```
+GET https://resource-pvp.giustizia.it<linkAllegato>   (path URL-encoded!)
+```
+
+Verificato `200/206`, `%PDF-`. ⚠️ Il `linkAllegato` contiene spazi e caratteri
+speciali → va codificato (la query `?versionId=` si preserva).
+
+### ⚠️ Endpoint che richiedono auth (NON usare per lettura pubblica)
+
+- `GET ve-ms/allegato/vendita/<id>` → **401**
+- `GET ve-ms/vendite/<id>/lotto` e `/lotti` → **401**
+
+L'elenco allegati pubblico si prende **da `ve-ms/vendite/<id>` → `body.allegati`**,
+non da questi. `src/downloader.py` fa esattamente questo.
+
 ## Rispetto della fonte (CLAUDE.md §1.5)
 
 - User-agent identificabile (usato nello spike:

@@ -28,6 +28,7 @@ from src.models import Lotto
 HOST = "https://pvp.giustizia.it"
 HOME_URL = f"{HOST}/pvp/"
 BASE_RICERCA_DEFAULT = f"{HOST}/ric-496b258c-986a1b71/ric-ms"
+BASE_VENDITE_DEFAULT = f"{HOST}/ve-3f723b85-986a1b71/ve-ms"
 FE_CONFIG_BO_DEFAULT = "/bo-5897bc47-986a1b71/bo-ms"
 DETTAGLIO_URL = f"{HOST}/pvp/it/detail_annuncio.page?idAnnuncio={{id}}"
 
@@ -82,15 +83,21 @@ def filtra_lotti(lotti: list[Lotto], target: TargetGeo) -> list[Lotto]:
 class PvpClient:
     """Client HTTP verso l'API del PVP. Thin wrapper: l'I/O sta qui, la logica no."""
 
-    def __init__(self, http: httpx.Client | None = None, base_ricerca: str | None = None):
+    def __init__(
+        self,
+        http: httpx.Client | None = None,
+        base_ricerca: str | None = None,
+        base_vendite: str | None = None,
+    ):
         self._http = http or httpx.Client(
             timeout=30.0, headers={"User-Agent": USER_AGENT, "Accept": "*/*"}
         )
         self.base_ricerca = base_ricerca or BASE_RICERCA_DEFAULT
+        self.base_vendite = base_vendite or BASE_VENDITE_DEFAULT
 
     def scopri_config(self) -> None:
-        """Aggiorna base_ricerca leggendo la config runtime del portale (fe-config).
-        Best-effort: se qualcosa va storto, resta il default. Così un cambio di
+        """Aggiorna le basi degli URL leggendo la config runtime (fe-config).
+        Best-effort: se qualcosa va storto, restano i default. Così un cambio di
         hash degli URL non rompe lo scraper senza intervento umano."""
         try:
             home = self._http.get(HOME_URL).text
@@ -99,11 +106,19 @@ class PvpClient:
             cfg = self._http.get(f"{HOST}{bo}/fe-config/it").json()
             cfg = cfg.get("body", cfg)
             host = cfg.get("host", HOST)
-            ricerca = (cfg.get("msUrl") or {}).get("ricerca")
-            if ricerca:
-                self.base_ricerca = f"{host}/{ricerca}"
+            ms = cfg.get("msUrl") or {}
+            if ms.get("ricerca"):
+                self.base_ricerca = f"{host}/{ms['ricerca']}"
+            if ms.get("vendite"):
+                self.base_vendite = f"{host}/{ms['vendite']}"
         except Exception:
-            pass  # fail soft: teniamo il default
+            pass  # fail soft: teniamo i default
+
+    def dettaglio_vendita(self, id_lotto: str | int) -> dict:
+        """Dettaglio pubblico di un lotto (include l'elenco `allegati`)."""
+        resp = self._http.get(f"{self.base_vendite}/vendite/{id_lotto}")
+        resp.raise_for_status()
+        return resp.json()
 
     def cerca(self, page: int, size: int, sort: str = "dataPubblicazione,desc") -> dict:
         """Una pagina di risultati (immobili) ordinati per pubblicazione desc."""
