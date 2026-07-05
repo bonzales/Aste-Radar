@@ -35,6 +35,7 @@ class Lotto:
     # Esito dell'analisi (Fase 3), persistito in DB:
     punteggio: float | None = None
     motivazione: str | None = None
+    esito_stato: str | None = None   # "passa" | "verifica" | "scarta"
     # Popolati dal DB, non dallo scraper:
     id: int | None = None
     prima_vista_il: str | None = None

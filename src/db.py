@@ -123,26 +123,28 @@ def segna_analizzato(
     conn: sqlite3.Connection,
     lotto_id: int,
     now: str,
-    passa: bool,
+    codice: int,
     punteggio: float | None,
     motivazione: str | None,
 ) -> None:
-    """Registra l'esito dell'analisi. Idempotente: non ri-analizza (AND analizzato_il IS NULL)."""
+    """Registra l'esito dell'analisi (codice: 1=passa, 2=verifica, 0=scarta).
+    Idempotente: non ri-analizza (AND analizzato_il IS NULL)."""
     conn.execute(
         "UPDATE lotti SET analizzato_il=?, esito_passa=?, punteggio=?, motivazione=? "
         "WHERE id=? AND analizzato_il IS NULL",
-        (now, 1 if passa else 0, punteggio, motivazione, lotto_id),
+        (now, codice, punteggio, motivazione, lotto_id),
     )
     conn.commit()
 
 
 def lotti_da_notificare(conn: sqlite3.Connection) -> list[Lotto]:
-    """Lotti che hanno PASSATO l'analisi e non ancora notificati, dal punteggio più
-    alto. Solo i promossi si notificano (CLAUDE.md §5)."""
+    """Lotti da notificare non ancora inviati: i promossi (1) e i 'da verificare'
+    (2, promettenti ma con dati mancanti — per non perdere opportunità). Gli
+    scartati (0) restano silenziosi (§5). Prima i promossi, poi per punteggio."""
     rows = conn.execute(
         f"SELECT {_COLS} FROM lotti "
-        f"WHERE notificato_il IS NULL AND esito_passa = 1 "
-        f"ORDER BY punteggio DESC, prima_vista_il"
+        f"WHERE notificato_il IS NULL AND esito_passa IN (1, 2) "
+        f"ORDER BY esito_passa ASC, punteggio DESC, prima_vista_il"
     ).fetchall()
     return [_row_to_lotto(r) for r in rows]
 
@@ -173,4 +175,5 @@ def _row_to_lotto(row: sqlite3.Row) -> Lotto:
         notificato_il=row["notificato_il"],
         punteggio=row["punteggio"],
         motivazione=row["motivazione"],
+        esito_stato={1: "passa", 2: "verifica", 0: "scarta"}.get(row["esito_passa"]),
     )

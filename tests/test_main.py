@@ -43,6 +43,7 @@ def _content():
     return [
         lot(111, "Venezia", "Venezia", CATEGORIA_RESIDENZIALE, 90000.0),   # target, passerà
         lot(222, "Mestre", "Venezia", CATEGORIA_RESIDENZIALE, 100000.0),   # target, scarterà
+        lot(555, "Chioggia", "Venezia", CATEGORIA_RESIDENZIALE, 70000.0),  # target, da verificare
         lot(333, "Palermo", "Palermo", CATEGORIA_RESIDENZIALE, 80000.0),   # fuori area
         lot(444, "Venezia", "Venezia", CATEGORIA_RESIDENZIALE, 999000.0),  # oltre budget
     ]
@@ -58,15 +59,17 @@ def conn():
 
 
 def _stub_analisi(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr):
-    # 111 promosso, tutti gli altri scartati
-    if lotto.id_esterno == "111":
+    if lotto.id_esterno == "111":   # promosso
         return Esito(passa=True, sconto=0.35, punteggio=0.8,
                      motivazioni=["prezzo 35% sotto stima", "libero", "cat. A/2"])
-    return Esito(passa=False, sconto=0.10, punteggio=None,
+    if lotto.id_esterno == "555":   # promettente ma dati mancanti → verifica
+        return Esito(passa=False, sconto=None, punteggio=None,
+                     da_verificare=["occupazione non classificata"])
+    return Esito(passa=False, sconto=0.10, punteggio=None,   # scartato hard
                  scarti=["sconto 10% sotto la soglia 25%"])
 
 
-def test_funnel_notifica_solo_i_promossi(conn, monkeypatch):
+def test_funnel_notifica_promossi_e_verifica_non_scartati(conn, monkeypatch):
     monkeypatch.setattr(main_mod, "_analizza_lotto", _stub_analisi)
     target = TargetGeo(province_intere={"venezia"}, solo_residenziale=True)
     notifier = FakeNotifier()
@@ -74,12 +77,12 @@ def test_funnel_notifica_solo_i_promossi(conn, monkeypatch):
         FakeClient(_content()), None, notifier, conn, target, {"hard": {}},
         giorni_indietro=14, prezzo_max=150000, now="2026-07-05T07:00:00",
     )
-    # Livello 1: 111 e 222 target entro budget (333 fuori area, 444 oltre budget)
-    assert stats["trovati"] == 2
-    assert stats["analizzati"] == 2
-    # solo 111 passa la griglia → una sola notifica
-    assert stats["notificati"] == 1
-    assert notifier.inviati == ["111"]
+    # Livello 1: 111, 222, 555 target entro budget (333 fuori area, 444 oltre budget)
+    assert stats["trovati"] == 3
+    assert stats["analizzati"] == 3
+    # 111 (passa) + 555 (da verificare) notificati; 222 (scarto hard) no
+    assert stats["notificati"] == 2
+    assert notifier.inviati == ["111", "555"]
 
 
 def test_funnel_idempotente_secondo_giro(conn, monkeypatch):

@@ -20,6 +20,24 @@ def test_messaggio_completo():
     assert "idAnnuncio=1" in msg
 
 
+def test_messaggio_promosso_ha_spunta_e_motivazione():
+    l = Lotto(fonte="pvp", id_esterno="9", url="u", comune="Gruaro", provincia="Venezia",
+              titolo="Casa", esito_stato="passa", punteggio=0.9,
+              motivazione="prezzo 59% sotto stima, libero, cat. A/5")
+    msg = formatta_messaggio(l)
+    assert "✅ prezzo 59% sotto stima" in msg
+    assert "★" in msg  # stelle dal punteggio
+
+
+def test_messaggio_verifica_ha_avviso():
+    l = Lotto(fonte="pvp", id_esterno="9", url="u", comune="Fossalta", provincia="Venezia",
+              titolo="Appartamento", esito_stato="verifica",
+              motivazione="manca: occupazione non classificata")
+    msg = formatta_messaggio(l)
+    assert "⚠️" in msg and "DA VERIFICARE" in msg
+    assert "occupazione" in msg
+
+
 def test_campi_assenti_vengono_omessi_non_inventati():
     l = Lotto(fonte="pvp", id_esterno="2", url="u", comune="Mestre",
               provincia="Venezia", titolo=None, prezzo_base=None, data_vendita=None)

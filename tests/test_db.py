@@ -91,27 +91,30 @@ def test_da_analizzare_e_segna_analizzato():
     c = sqlite3.connect(":memory:"); c.row_factory = sqlite3.Row; db.init_db(c)
     db.upsert_lotto(c, _lotto(id_esterno="A"), now="t0")
     assert {l.id_esterno for l in db.lotti_da_analizzare(c)} == {"A"}
-    db.segna_analizzato(c, _id_riga(c, "A"), now="t1", passa=True, punteggio=0.7, motivazione="ok")
+    db.segna_analizzato(c, _id_riga(c, "A"), now="t1", codice=1, punteggio=0.7, motivazione="ok")
     # analizzato → non torna nella coda di analisi
     assert db.lotti_da_analizzare(c) == []
     c.close()
 
 
-def test_notificare_solo_i_lotti_promossi(conn):
-    db.upsert_lotto(conn, _lotto(id_esterno="PASS"), now="t0")
-    db.upsert_lotto(conn, _lotto(id_esterno="SCART"), now="t0")
+def test_notificare_promossi_e_verifica_non_scartati(conn):
+    for e in ("PASS", "VERIF", "SCART"):
+        db.upsert_lotto(conn, _lotto(id_esterno=e), now="t0")
     # non ancora analizzati → coda notifica vuota (§5: si notifica solo dopo analisi)
     assert db.lotti_da_notificare(conn) == []
-    db.segna_analizzato(conn, _id_riga(conn, "PASS"), "t1", passa=True, punteggio=0.9, motivazione="ottimo")
-    db.segna_analizzato(conn, _id_riga(conn, "SCART"), "t1", passa=False, punteggio=None, motivazione="SCARTO")
+    db.segna_analizzato(conn, _id_riga(conn, "PASS"), "t1", codice=1, punteggio=0.9, motivazione="ottimo")
+    db.segna_analizzato(conn, _id_riga(conn, "VERIF"), "t1", codice=2, punteggio=None, motivazione="manca X")
+    db.segna_analizzato(conn, _id_riga(conn, "SCART"), "t1", codice=0, punteggio=None, motivazione="SCARTO")
     da_notificare = db.lotti_da_notificare(conn)
-    assert [l.id_esterno for l in da_notificare] == ["PASS"]
-    assert da_notificare[0].motivazione == "ottimo"
+    # promosso prima, poi il 'da verificare'; lo scartato resta silenzioso
+    assert [l.id_esterno for l in da_notificare] == ["PASS", "VERIF"]
+    assert da_notificare[0].esito_stato == "passa"
+    assert da_notificare[1].esito_stato == "verifica"
 
 
 def test_segna_notificato_rimuove_dalla_coda_ed_e_idempotente(conn):
     db.upsert_lotto(conn, _lotto(id_esterno="A"), now="t0")
-    db.segna_analizzato(conn, _id_riga(conn, "A"), "t1", passa=True, punteggio=0.5, motivazione="ok")
+    db.segna_analizzato(conn, _id_riga(conn, "A"), "t1", codice=1, punteggio=0.5, motivazione="ok")
     lotto = db.lotti_da_notificare(conn)[0]
     db.segna_notificato(conn, lotto.id, now="2026-07-05T07:05:00")
     assert db.lotti_da_notificare(conn) == []

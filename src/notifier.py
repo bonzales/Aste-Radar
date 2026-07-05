@@ -51,7 +51,9 @@ def formatta_messaggio(lotto: Lotto) -> str:
         righe.append(f"💶 Base: {_euro(lotto.prezzo_base)}")
     if lotto.data_vendita:
         righe.append(f"🗓 Vendita: {lotto.data_vendita}")
-    if lotto.motivazione:
+    if lotto.esito_stato == "verifica":
+        righe.append(f"⚠️ Promettente, DA VERIFICARE a mano ({lotto.motivazione})")
+    elif lotto.motivazione:
         stelle = ""
         if lotto.punteggio is not None:
             n = 1 + round(lotto.punteggio * 4)  # 1..5

@@ -34,6 +34,30 @@ class Esito:
     def motivazione_breve(self) -> str:
         return ", ".join(self.motivazioni)
 
+    def codice(self) -> int:
+        """1 = passa (notifica ✅); 2 = promettente ma con dati mancanti (notifica
+        ⚠️ da verificare a mano); 0 = scartato (silenzio, §5)."""
+        if self.passa:
+            return 1
+        if self.scarti:
+            return 0
+        if self.da_verificare:
+            return 2
+        return 0
+
+    def stato(self) -> str:
+        return {1: "passa", 2: "verifica", 0: "scarta"}[self.codice()]
+
+    def riassunto(self) -> str:
+        """Testo sintetico dell'esito, per DB e notifica."""
+        if self.passa:
+            return self.motivazione_breve()
+        if self.scarti:
+            return "SCARTO: " + "; ".join(self.scarti)
+        if self.da_verificare:
+            return "manca: " + "; ".join(self.da_verificare)
+        return "scartato"
+
 
 def carica_griglia(path: str | Path = "config/scoring.yaml") -> dict:
     dati = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}

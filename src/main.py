@@ -29,7 +29,7 @@ from src.scraper import PvpClient, scansiona
 DB_PATH = "db/aste.sqlite"
 GIORNI_SETTIMANALE = 14     # giro settimanale: 14 gg coprono il gap con margine
 GIORNI_BACKFILL = 180       # primo giro (DB vuoto): recupera l'arretrato aperto
-MAX_PAGINE_OCR = 60         # profondità OCR per perizia (i dati chiave stanno qui)
+MAX_PAGINE_OCR = 80         # profondità OCR per perizia (analisi accurata, §utente)
 
 
 def _analizza_lotto(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr) -> Esito:
@@ -58,16 +58,6 @@ def _analizza_lotto(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr) 
     return valuta(lotto, dati, griglia)
 
 
-def _riassunto_esito(esito: Esito) -> str:
-    if esito.passa:
-        return esito.motivazione_breve()
-    if esito.scarti:
-        return "SCARTO: " + "; ".join(esito.scarti)
-    if esito.da_verificare:
-        return "DA VERIFICARE: " + "; ".join(esito.da_verificare)
-    return "scartato"
-
-
 def esegui(client, ai_client, notifier, conn, target, griglia, *,
            giorni_indietro, prezzo_max, dir_raw="raw",
            max_pagine_ocr=MAX_PAGINE_OCR, now=None):
@@ -87,8 +77,8 @@ def esegui(client, ai_client, notifier, conn, target, griglia, *,
             errori += 1
             print(f"[aste-radar] analisi lotto {lotto.id_esterno} fallita: {exc}", file=sys.stderr)
             continue
-        db.segna_analizzato(conn, lotto.id, now, esito.passa, esito.punteggio,
-                            _riassunto_esito(esito))
+        db.segna_analizzato(conn, lotto.id, now, esito.codice(), esito.punteggio,
+                            esito.riassunto())
         analizzati += 1
 
     # Notifica: solo i promossi non ancora notificati
