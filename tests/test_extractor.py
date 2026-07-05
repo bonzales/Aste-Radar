@@ -38,11 +38,26 @@ def test_costruisci_messaggio_include_testo_e_istruzione():
     assert "null" in msg  # istruzione a non inventare
 
 
+def test_parse_json_risposta_tollera_testo_attorno():
+    from src.extractor import _parse_json_risposta
+    grezzo = 'Ecco i dati:\n```json\n{"valore_stima": 100000, "note": null}\n```\nfine'
+    dati = _parse_json_risposta(grezzo)
+    assert dati["valore_stima"] == 100000
+
+
 # --- Fake client per testare il flusso di escalation senza rete ---
+
+class _Blocco:
+    type = "text"
+
+    def __init__(self, text):
+        self.text = text
+
 
 class _FakeResp:
     def __init__(self, parsed):
-        self.parsed_output = parsed
+        # il modello "risponde" col JSON dei dati
+        self.content = [_Blocco(parsed.model_dump_json())]
 
 
 class _FakeMessages:
@@ -50,7 +65,7 @@ class _FakeMessages:
         self.per_modello = per_modello
         self.modelli_chiamati = []
 
-    def parse(self, model, **kwargs):
+    def create(self, model, **kwargs):
         self.modelli_chiamati.append(model)
         return _FakeResp(self.per_modello[model])
 

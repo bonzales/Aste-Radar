@@ -14,6 +14,9 @@ La parte deterministica (schema, prompt, euristica di escalation, conteggio camp
 
 from __future__ import annotations
 
+import json
+import re
+
 from pydantic import BaseModel, Field
 
 MODELLO_BASE = "claude-haiku-4-5"
@@ -65,15 +68,38 @@ SYSTEM_PROMPT = (
     "non è presente o non sei sicuro, lascia il campo null: NON stimare, NON dedurre, "
     "NON inventare. Un valore falso in una perizia d'asta può costare decine di "
     "migliaia di euro. Distingui il VALORE DI STIMA peritale dal PREZZO BASE d'asta. "
-    "Il testo può provenire da OCR e contenere rumore: ignoralo."
+    "Il testo può provenire da OCR e contenere rumore: ignoralo. "
+    "Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo prima o dopo, "
+    "senza backtick. Gli importi in euro sono numeri (nessun simbolo o separatore migliaia)."
 )
+
+
+def _schema_json() -> str:
+    """Template del JSON atteso, generato dallo schema pydantic (resta in sync)."""
+    righe = [
+        f'  "{nome}": null   // {campo.description}'
+        for nome, campo in PeriziaEstratta.model_fields.items()
+    ]
+    return "{\n" + "\n".join(righe) + "\n}"
 
 
 def costruisci_messaggio(testo_perizia: str) -> str:
     return (
-        "Estrai i dati chiave dalla seguente perizia. Ricorda: campo non presente = null.\n\n"
-        "=== PERIZIA ===\n" + testo_perizia
+        "Estrai i dati chiave dalla seguente perizia e restituiscili in questo schema "
+        "JSON (usa null dove il dato non è presente):\n"
+        + _schema_json()
+        + "\n\n=== PERIZIA ===\n"
+        + testo_perizia
     )
+
+
+def _parse_json_risposta(testo_out: str) -> dict:
+    """Estrae l'oggetto JSON dalla risposta del modello (tollera eventuale testo
+    o backtick attorno)."""
+    m = re.search(r"\{.*\}", testo_out, re.DOTALL)
+    if not m:
+        raise ValueError("nessun oggetto JSON nella risposta del modello")
+    return json.loads(m.group(0))
 
 
 def conta_campi_sostanziali(estratta: PeriziaEstratta) -> int:
@@ -86,14 +112,14 @@ def serve_escalation(estratta: PeriziaEstratta) -> bool:
 
 
 def _estrai_con_modello(client, testo_perizia: str, modello: str) -> PeriziaEstratta:
-    resp = client.messages.parse(
+    resp = client.messages.create(
         model=modello,
-        max_tokens=4096,
+        max_tokens=2048,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": costruisci_messaggio(testo_perizia)}],
-        output_format=PeriziaEstratta,
     )
-    return resp.parsed_output
+    testo_out = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+    return PeriziaEstratta.model_validate(_parse_json_risposta(testo_out))
 
 
 def estrai_perizia(
