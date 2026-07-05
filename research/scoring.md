@@ -52,12 +52,38 @@ sui criteri e sui pesi:
 DA DECIDERE i numeri con l'utente (§12), ma con la bussola "flip" sopra. Vedi
 `fiscale.md` per la differenza fra margine teorico d'asta e utile netto.
 
-## Decisioni aperte tracciate qui
+## Il funnel a livelli (deciso 2026-07-05) — ottimizza costo e velocità
 
-- [x] Reddito vs flip → **FLIP** (2026-07-05). Griglia specializzata.
-- [ ] Sconto minimo su stima (numero) — criterio dominante per il flip.
-- [ ] Zone ammesse (A/B/C) — dipende da `comuni.md`.
-- [ ] Categorie catastali ammesse.
-- [ ] Superficie min/max.
-- [ ] Pesi soft e soglia di notifica.
-- [ ] Come pesare ristrutturabilità e liberabilità (dati non sempre in perizia).
+L'IA (a pagamento, ~1-3 cent/perizia con Haiku 4.5) tocca SOLO i lotti che passano
+i filtri gratuiti precedenti:
+
+- **Livello 0** (gratis): geografia — province VE/TV target.
+- **Livello 1** (gratis, dati già nella ricerca PVP): categoria residenziale,
+  occupazione (il PVP dà `disponibilita` gratis!), prezzo base ≤ tetto. Scarta la
+  maggior parte a costo zero.
+- **Livello 2** (~1-3 cent): scarica perizia → OCR → IA estrae valore stima,
+  superficie, categoria catastale, occupazione classificata, piena proprietà,
+  abusi. Applica i gate hard (sconto, proprietà, categoria fine, abusi).
+- **Livello 3** (rimandato): margine di flip netto. Richiede assunzioni utente
+  (rivendita €/mq, ristrutturazione €/mq per zona) → `calcola_margine_flip: false`.
+
+## Soglie hard DECISE (2026-07-05) — in `config/scoring.yaml`
+
+- **Sconto minimo su stima: 25%** (`sconto_min_su_stima: 0.25`). Il driver del flip.
+- **Occupazione: libero + occupato dal debitore** (liberabile). Escluso il
+  contratto opponibile (es. locazione turistica — vedi caso Giudecca).
+- **Tetto prezzo base: 150.000 €** (liquidità pronta dell'utente; filtro Livello 1).
+- **Solo piena proprietà**: esclusi quota/nuda proprietà/usufrutto/superficie.
+- **Categorie**: appartamenti e case singole (A/1,2,3,4,5,7,8,11); esclusi A/10
+  uffici, C/* box, D/* alberghi, terreni. (uso abitativo → vantaggio prezzo-valore.)
+- **Abusi insanabili**: scarto hard.
+
+Nota disciplina (§5): un dato mancante che impedisce di verificare un gate →
+il lotto NON si notifica (resta in DB, recuperabile), non lo si "assume buono".
+
+## Ancora aperte
+
+- [ ] **Superficie min/max** (utente non ancora deciso).
+- [ ] **Zone ammesse (A/B/C)** — dipende da `comuni.md` (mappa microzone dell'utente).
+- [ ] Pesi soft oltre lo sconto (entrano con le zone e col margine di flip).
+- [ ] Livello 3 (margine flip): rivendita €/mq e ristrutturazione €/mq per zona.

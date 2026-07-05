@@ -46,13 +46,34 @@ class PeriziaEstratta(BaseModel):
     zona: str | None = Field(None, description="Zona/località o riferimento urbanistico, se indicato")
     occupazione: str | None = Field(
         None,
-        description="Stato di occupazione: libero, occupato dal debitore, occupato con contratto opponibile, ecc.",
+        description="Stato di occupazione testuale come descritto in perizia (es. 'libero', 'occupato dal debitore', 'locato con contratto')",
+    )
+    occupazione_tipo: str | None = Field(
+        None,
+        description=(
+            "Classificazione dell'occupazione in UNA di: 'libero' (immobile libero); "
+            "'occupato_debitore' (occupato dal debitore/esecutato, senza contratto opponibile); "
+            "'occupato_contratto' (locato/occupato con contratto opponibile, es. affitto o attività); "
+            "'altro'. null se non deducibile con certezza dal testo."
+        ),
     )
     categoria_catastale: str | None = Field(
-        None, description="Categoria catastale (es. A/2, A/3), se indicata"
+        None, description="Categoria catastale (es. A/2, A/3, C/6, D/2), se indicata"
+    )
+    piena_proprieta: bool | None = Field(
+        None,
+        description=(
+            "true se l'oggetto della vendita è la PIENA PROPRIETÀ dell'intero immobile; "
+            "false se è una quota di comproprietà, nuda proprietà, usufrutto o diritto di superficie. "
+            "null se non deducibile."
+        ),
     )
     difformita: str | None = Field(
         None, description="Difformità/abusi edilizi rilevati; specificare se sanabili o insanabili"
+    )
+    abusi_insanabili: bool | None = Field(
+        None,
+        description="true se la perizia indica abusi/difformità edilizie INSANABILI; false se assenti o sanabili; null se non deducibile",
     )
     arretrati_condominiali: float | None = Field(
         None, description="Arretrati condominiali a carico dell'aggiudicatario in euro, se quantificati"

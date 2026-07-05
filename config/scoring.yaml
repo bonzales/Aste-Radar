@@ -2,52 +2,68 @@
 # scorer.py legge questo file (CLAUDE.md §3.3, §5). Il razionale — PERCHÉ questi
 # valori — vive in research/scoring.md, non qui.
 #
-# DECISIONE APERTA (CLAUDE.md §12): pesi e soglie esatti non ancora fissati.
-# I valori qui sono PLACEHOLDER commentati, NON tarati. Vanno decisi con l'utente
-# (brainstorming §9) e poi giustificati in research/scoring.md prima di andare in
-# produzione. Finché "tarato: false", scorer.py deve rifiutarsi di girare in prod.
-#
-# NOTA anti-illusione (CLAUDE.md §5): i criteri "hard" sono gate binari. Un solo
-# criterio hard mancante = scarto silenzioso, niente notifica. Non ammorbidire.
-
 # Obiettivo (DECISO 2026-07-05): flip = rivendita entro 5 anni. La griglia si
 # specializza sul margine di rivendita, non sul reddito da locazione (research/scoring.md).
 obiettivo: flip
 
-tarato: false   # metti true solo dopo aver deciso e giustificato i valori
+# Soglie hard DECISE con l'utente il 2026-07-05 → la griglia è operativa sui
+# criteri hard. Pesi soft e zone A/B/C ancora da rifinire (vedi sotto).
+tarato: true
 
 # --- Criteri HARD (gate binari: se falliti, scarto silenzioso) ---
 hard:
-  # Sconto minimo del prezzo base sul valore di stima perché valga la pena.
-  # es. 0.30 = prezzo base almeno 30% sotto la stima.
-  sconto_min_su_stima: null        # TODO decidere
+  # Sconto minimo del prezzo base sul valore di stima peritale.
+  # 0.25 = prezzo base almeno 25% sotto la stima.
+  sconto_min_su_stima: 0.25
 
-  # Zone ammesse (riferite a research/comuni.md). es. ["A", "B"]
-  zone_ammesse: null               # TODO decidere
+  # Tetto massimo di prezzo base d'asta (filtro economico di Livello 1).
+  prezzo_base_max: 150000
 
-  # Categorie catastali ammesse. Ricorda prezzo-valore: A tranne A/10 (CLAUDE.md §11).
-  categorie_ammesse: null          # TODO decidere
+  # Occupazione ammessa. Valori: libero | occupato_debitore | occupato_contratto.
+  # Deciso: libero + occupato dal debitore (liberabile). Il contratto opponibile
+  # (es. locazione turistica) resta escluso.
+  occupazione_ammessa:
+    - libero
+    - occupato_debitore
 
-  # Occupazione: quali situazioni sono accettabili.
-  #   libero              -> ok
-  #   occupato_debitore   -> liberabile, valutabile
-  #   contratto_opponibile-> scarto per uso proprio (CLAUDE.md §11)
-  occupazione_ammessa: null        # TODO decidere
+  # Solo piena proprietà: esclusi quota di comproprietà, nuda proprietà, usufrutto,
+  # diritto di superficie.
+  solo_piena_proprieta: true
+
+  # Categorie catastali ammesse: appartamenti e case singole (uso abitativo →
+  # vantaggio prezzo-valore, cat. A tranne A/10). Esclusi: A/10 uffici, A/9
+  # (castelli/palazzi eminenti), C/* (box/garage/negozi), D/* (alberghi/industriali),
+  # terreni. Rivedibile.
+  categorie_ammesse:
+    - A/1   # abitazioni signorili
+    - A/2   # abitazioni civili
+    - A/3   # abitazioni economiche
+    - A/4   # abitazioni popolari
+    - A/5   # abitazioni ultrapopolari
+    - A/7   # villini (case singole)
+    - A/8   # ville (case singole)
+    - A/11  # abitazioni tipiche dei luoghi
 
   # Abusi/difformità insanabili = scarto hard (CLAUDE.md §11).
   scarta_se_abusi_insanabili: true
 
-  # Filtri dimensionali (mq). Lasciare null = nessun limite.
-  superficie_mq_min: null          # TODO decidere
-  superficie_mq_max: null          # TODO decidere
+  # Filtri dimensionali (mq). null = nessun limite. ANCORA DA DECIDERE con l'utente.
+  superficie_mq_min: null      # TODO (utente non ancora deciso)
+  superficie_mq_max: null      # TODO
 
-# --- Pesi SOFT (per ordinare/priorizzare i lotti che passano i gate hard) ---
-# Sommano idealmente a 1.0. Alimentano il punteggio + la motivazione leggibile.
+  # Zone ammesse (A/B/C, mappa in research/comuni.md). null = nessun filtro di zona
+  # oltre alla geografia (province VE/TV). DA DEFINIRE con l'utente.
+  zone_ammesse: null
+
+# --- Punteggio SOFT (ordina i lotti che passano TUTTI i gate hard) ---
+# Per il flip il driver è lo sconto sulla stima. Placeholder ragionevoli, da tarare.
 soft:
-  peso_sconto_su_stima: null       # TODO decidere
-  peso_zona: null                  # TODO decidere
-  peso_occupazione: null           # TODO decidere
-  peso_categoria: null             # TODO decidere
+  # Punteggio = normalizzazione dello sconto sopra la soglia (0..1). Più sconto,
+  # più in alto. Gli altri pesi entrano quando definiamo zone e margine di flip.
+  peso_sconto_su_stima: 1.0
 
-# Soglia di punteggio soft sopra cui notificare (dopo aver passato i gate hard).
-soglia_notifica: null              # TODO decidere
+# --- Profondità dell'analisi (DECISO 2026-07-05) ---
+# livello 3 (margine di flip) rimandato: richiede prezzo rivendita/mq e costo
+# ristrutturazione/mq per zona (assunzioni dell'utente). Per ora ci si ferma
+# all'estrazione dati + gate hard + punteggio sconto.
+calcola_margine_flip: false

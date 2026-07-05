@@ -324,10 +324,17 @@ Risolte il 2026-07-05 (dettagli nelle pagine `research/` indicate):
       limitrofi tutti attivi (7); cron giornaliero **07:00**; tipologia **solo
       residenziale**. (`research/fase1-mvp-spec.md`, `config/comuni.yaml`)
 
+- [x] **Griglia hard** (2026-07-05): sconto min **25%**; occupazione **libero +
+      occupato dal debitore**; tetto prezzo base **150.000 €**; **solo piena
+      proprietà**; categorie **appartamenti e case singole** (A/1,2,3,4,5,7,8,11);
+      abusi insanabili = scarto. Analisi fino al Livello 2 (dati, no margine flip
+      per ora). (`research/scoring.md`, `config/scoring.yaml`, `src/scorer.py`)
+
 Ancora aperte:
 
-- [ ] Pesi e soglie esatti della griglia (`config/scoring.yaml`): sconto minimo
-      su stima, zone A/B/C, superficie min/max, categorie ammesse.
+- [ ] Superficie min/max (mq) della griglia.
+- [ ] Zone ammesse A/B/C (mappa microzone in `research/comuni.md`).
+- [ ] Livello 3 — margine di flip: rivendita €/mq e ristrutturazione €/mq per zona.
 
 > Aggiorna questa lista man mano che le decisioni vengono prese, spostando le
 > voci risolte nella pagina `research/` pertinente.
