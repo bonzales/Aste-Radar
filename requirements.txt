@@ -12,6 +12,9 @@ pytesseract>=0.3.10    # wrapper Tesseract (richiede il binario tesseract-ocr + 
 pillow>=10.0           # immagini per l'OCR
 # NB di sistema: apt install tesseract-ocr tesseract-ocr-ita poppler-utils
 
+# --- extractor.py: estrazione strutturata via LLM (CLAUDE.md §7) ---
+anthropic>=0.116          # SDK ufficiale; structured outputs (messages.parse + pydantic)
+
 # --- config loader (comuni.yaml, scoring.yaml) ---
 PyYAML>=6.0
 
