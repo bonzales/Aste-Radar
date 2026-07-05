@@ -75,21 +75,28 @@ def esegui(client, ai_client, notifier, conn, target, griglia, *,
     now = now or datetime.now().isoformat(timespec="seconds")
 
     # Livello 0/1: scansione completa della finestra + filtro area/budget/futuro
+    print(f"[aste-radar] scansione finestra {giorni_indietro}gg...", flush=True)
     lotti = scansiona(client, target, giorni_indietro=giorni_indietro, prezzo_max=prezzo_max)
     nuovi = sum(1 for l in lotti if db.upsert_lotto(conn, l, now))
 
     # Livello 2: analizza (una volta) i lotti non ancora analizzati
+    da_analizzare = db.lotti_da_analizzare(conn)
+    print(f"[aste-radar] trovati {len(lotti)} in zona; {len(da_analizzare)} da analizzare "
+          f"(perizia + IA, qualche minuto ciascuno)...", flush=True)
     analizzati = errori = 0
-    for lotto in db.lotti_da_analizzare(conn):
+    for i, lotto in enumerate(da_analizzare, 1):
         try:
             esito = _analizza_lotto(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr)
         except Exception as exc:  # errore transitorio: lascia da ri-analizzare
             errori += 1
-            print(f"[aste-radar] analisi lotto {lotto.id_esterno} fallita: {exc}", file=sys.stderr)
+            print(f"[aste-radar] [{i}/{len(da_analizzare)}] {lotto.comune} "
+                  f"{lotto.id_esterno}: ERRORE {exc}", file=sys.stderr, flush=True)
             continue
         db.segna_analizzato(conn, lotto.id, now, esito.codice(), esito.punteggio,
                             esito.riassunto())
         analizzati += 1
+        print(f"[aste-radar] [{i}/{len(da_analizzare)}] {lotto.comune} "
+              f"{lotto.id_esterno}: {esito.stato().upper()} — {esito.riassunto()[:90]}", flush=True)
 
     # Notifica: solo i promossi non ancora notificati
     notificati = 0
