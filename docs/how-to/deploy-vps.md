@@ -46,16 +46,16 @@ Atteso: `[aste-radar] trovati=.. nuovi=.. notificati=..` e le notifiche su
 Telegram. Al **primo avvio** arriva l'arretrato degli ultimi 7 giorni: normale.
 Se qualcosa va storto ricevi `⚠️ Scansione aste fallita: <motivo>` (fail loud).
 
-## 5. La sveglia: cron SETTIMANALE (lunedì 07:00)
+## 5. La sveglia: cron SETTIMANALE (sabato 07:00)
 
 ```bash
 crontab -e
 ```
 Aggiungi questa riga (aggiusta i percorsi):
 ```cron
-0 7 * * 1 cd /home/<utente>/aste-radar && /home/<utente>/aste-radar/.venv/bin/python -m src.main >> /home/<utente>/aste-radar/logs/aste.log 2>&1
+0 7 * * 6 cd /home/<utente>/aste-radar && /home/<utente>/aste-radar/.venv/bin/python -m src.main >> /home/<utente>/aste-radar/logs/aste.log 2>&1
 ```
-Da qui in poi aste-radar lavora da solo: ogni LUNEDÌ controlla i nuovi lotti e
+Da qui in poi aste-radar lavora da solo: ogni SABATO controlla i nuovi lotti e
 ti scrive su Telegram solo quelli nuovi. Rilanci lo stesso giorno non creano
 doppioni (idempotenza).
 

@@ -21,6 +21,7 @@ from src import db
 from src.config import carica_target
 from src.downloader import parse_allegati, scarica_allegati
 from src.extractor import PeriziaEstratta, estrai_perizia
+from src.flip import calcola_margine, flip_abilitato
 from src.notifier import TelegramNotifier, leggi_secrets
 from src.parser import estrai_testo
 from src.scorer import Esito, carica_griglia, valuta
@@ -55,7 +56,16 @@ def _analizza_lotto(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr) 
                      da_verificare=["perizia illeggibile"])
 
     dati: PeriziaEstratta = estrai_perizia(ai_client, testo.testo)
-    return valuta(lotto, dati, griglia)
+    esito = valuta(lotto, dati, griglia)
+
+    # Livello 3: se abilitato e il lotto è interessante (passa/verifica), stima il
+    # margine di flip e aggiungilo alla motivazione mostrata nella notifica.
+    if flip_abilitato(griglia) and esito.codice() in (1, 2):
+        margine = calcola_margine(lotto.prezzo_base, dati.valore_stima,
+                                  dati.superficie_mq, griglia)
+        if margine is not None:
+            esito.motivazioni.append(margine.riga())
+    return esito
 
 
 def esegui(client, ai_client, notifier, conn, target, griglia, *,

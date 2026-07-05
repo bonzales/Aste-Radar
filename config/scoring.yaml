@@ -62,8 +62,28 @@ soft:
   # più in alto. Gli altri pesi entrano quando definiamo zone e margine di flip.
   peso_sconto_su_stima: 1.0
 
-# --- Profondità dell'analisi (DECISO 2026-07-05) ---
-# livello 3 (margine di flip) rimandato: richiede prezzo rivendita/mq e costo
-# ristrutturazione/mq per zona (assunzioni dell'utente). Per ora ci si ferma
-# all'estrazione dati + gate hard + punteggio sconto.
-calcola_margine_flip: false
+# --- Livello 3: margine di flip (ATTIVO dal 2026-07-05) ---
+# STIMA di screening, non consulenza fiscale (§1.6). Assunzioni ESPLICITE e
+# modificabili: sono i numeri che rendono il calcolo tuo. Il margine si mostra
+# nella notifica; non è un gate hard (le assunzioni sono incerte).
+calcola_margine_flip: true
+
+flip:
+  # Prezzo di rivendita come frazione del valore di stima peritale.
+  # 1.0 = rivendo al valore di stima; 0.9 = più prudente (rivendo al 90%).
+  rivendita_su_stima: 1.0
+  # Costo di ristrutturazione al m². DA TARARE con l'utente (varia molto):
+  # es. rinfresco ~250-350, ristrutturazione media ~500-700, totale ~900+.
+  ristrutturazione_eur_mq: 400
+  # Imposte d'acquisto (registro/ipocatastali) come % del prezzo — APPROSSIMAZIONE
+  # di screening (il prezzo-valore su cat. abitativa ridurrebbe l'imponibile).
+  imposta_acquisto_pct: 0.10
+  # Costi di procedura/aggiudicazione (compenso delegato, spese) come % del prezzo.
+  costi_procedura_pct: 0.03
+  # Costi di rivendita (agenzia, varie) come % del prezzo di rivendita.
+  costi_rivendita_pct: 0.04
+  # Costi di possesso mensili (IMU, condominio, utenze minime) × mesi stimati.
+  costi_possesso_mensili: 150
+  mesi_possesso: 9
+  # Tassazione plusvalenza rivendita <5 anni (sostitutiva 26%).
+  plusvalenza_pct: 0.26
