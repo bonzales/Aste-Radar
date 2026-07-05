@@ -1,0 +1,174 @@
+{
+  "messaggio": "Operazione effettuata con successo",
+  "body": {
+    "content": [
+      {
+        "id": 4599053,
+        "tipoLotto": "IMMOBILI",
+        "categoriaLotto": "IMMOBILE_COMMERCIALE",
+        "categoriaBene": [
+          "NEGOZI_BOTTEGHE"
+        ],
+        "indirizzo": {
+          "via": "Via Santicelli 19",
+          "numeroCivico": "",
+          "cap": "90131",
+          "citta": "Palermo",
+          "provincia": "Palermo",
+          "coordinate": {
+            "latitudine": 38.087964,
+            "longitudine": 13.314714
+          },
+          "codNazione": null,
+          "codRegione": null,
+          "codProvincia": null,
+          "codComune": null,
+          "idIndirizzo": null,
+          "descComune": null,
+          "descProvincia": null,
+          "descRegione": null,
+          "descNazione": null,
+          "comuneEstero": null
+        },
+        "numeroLotto": "1",
+        "procedura": "54",
+        "prezzoBaseAsta": 129276.0,
+        "dataVendita": "2026-09-22",
+        "orarioVendita": "12:00",
+        "dataOraVendita": "2026-09-22T12:00",
+        "dataPubblicazione": "2026-06-23",
+        "immagine": null,
+        "immagineCover": null,
+        "offertaMinima": 96957.0,
+        "rialzoMinimo": 2000.0,
+        "disponibilita": [
+          "NON_SPECIFICATA"
+        ],
+        "descLotto": "Lotto unico: Unità immobiliare sita in Palermo, Via Santicelli n. 19, piano terra, censito al Catasto dei Fabbricati di Palermo al foglio 1443, particella 432/sub.5, particella 2555/sub.6, categoria C/1, classe 8, consistenza m² 104. L’immobile in esame, presumibilmente entro la fine del primo trimestre 2024, si troverà nello stato di “libero da persone e cose”. Si rimanda alla documentazione in allegato",
+        "descLottoDE": null,
+        "tribunale": "Tribunale di PALERMO",
+        "codiceTribunale": "0820530098",
+        "esito": null
+      },
+      {
+        "id": 4587243,
+        "tipoLotto": "IMMOBILI",
+        "categoriaLotto": "IMMOBILE_COMMERCIALE",
+        "categoriaBene": [
+          "UFFICIO"
+        ],
+        "indirizzo": {
+          "via": "via Castellana 59",
+          "numeroCivico": "",
+          "cap": null,
+          "citta": "Venezia",
+          "provincia": "Venezia",
+          "coordinate": null,
+          "codNazione": null,
+          "codRegione": null,
+          "codProvincia": null,
+          "codComune": null,
+          "idIndirizzo": null,
+          "descComune": null,
+          "descProvincia": null,
+          "descRegione": null,
+          "descNazione": null,
+          "comuneEstero": null
+        },
+        "numeroLotto": "1",
+        "procedura": "28",
+        "prezzoBaseAsta": 112500.0,
+        "dataVendita": "2026-07-03",
+        "orarioVendita": "16:01",
+        "dataOraVendita": "2026-07-03T16:01",
+        "dataPubblicazione": "2026-05-28",
+        "immagine": null,
+        "immagineCover": null,
+        "offertaMinima": 112500.0,
+        "rialzoMinimo": 1000.0,
+        "disponibilita": [
+          "NON_SPECIFICATA"
+        ],
+        "descLotto": "Ufficio a Mestre (VE) - vendita telematica sulla piattaforma www.gobidreal.it n.31710",
+        "descLottoDE": null,
+        "tribunale": "Tribunale di VENEZIA",
+        "codiceTribunale": "0270420098",
+        "esito": null
+      },
+      {
+        "id": 4546457,
+        "tipoLotto": "IMMOBILI",
+        "categoriaLotto": "IMMOBILE_RESIDENZIALE",
+        "categoriaBene": [
+          "ABITAZIONE_TIPO_ECO"
+        ],
+        "indirizzo": {
+          "via": "Via Motta 10",
+          "numeroCivico": "",
+          "cap": "30174",
+          "citta": "Venezia",
+          "provincia": "Venezia",
+          "coordinate": {
+            "latitudine": 45.50046,
+            "longitudine": 12.254356
+          },
+          "codNazione": null,
+          "codRegione": null,
+          "codProvincia": null,
+          "codComune": null,
+          "idIndirizzo": null,
+          "descComune": null,
+          "descProvincia": null,
+          "descRegione": null,
+          "descNazione": null,
+          "comuneEstero": null
+        },
+        "numeroLotto": "1",
+        "procedura": "16",
+        "prezzoBaseAsta": 10000.0,
+        "dataVendita": "2026-04-23",
+        "orarioVendita": "12:00",
+        "dataOraVendita": "2026-04-23T12:00",
+        "dataPubblicazione": "2026-03-16",
+        "immagine": null,
+        "immagineCover": null,
+        "offertaMinima": 7500.0,
+        "rialzoMinimo": 500.0,
+        "disponibilita": [
+          "NON_SPECIFICATA"
+        ],
+        "descLotto": "LOTTO UNICO: quota indivisa pari a 1/6 della piena proprietà di un appartamento al piano primo e di un garage al piano terra, facenti parte del fabbricato condominiale denominato “Condominio Motta”, sito nel Comune di Venezia (VE), Mestre – Carpenedo, Via Motta n. 10. Vendita competitiva telematica sui portali www.doauction.it - Gruppo Edicom",
+        "descLottoDE": null,
+        "tribunale": "Tribunale di VENEZIA",
+        "codiceTribunale": "0270420098",
+        "esito": null
+      }
+    ],
+    "pageable": {
+      "sort": {
+        "empty": false,
+        "sorted": true,
+        "unsorted": false
+      },
+      "offset": 0,
+      "pageNumber": 0,
+      "pageSize": 10,
+      "paged": true,
+      "unpaged": false
+    },
+    "totalPages": 3,
+    "totalElements": 27,
+    "last": false,
+    "size": 10,
+    "number": 0,
+    "sort": {
+      "empty": false,
+      "sorted": true,
+      "unsorted": false
+    },
+    "numberOfElements": 10,
+    "first": true,
+    "empty": false
+  },
+  "error": null
+}

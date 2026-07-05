@@ -20,6 +20,9 @@ danni sulle aste e per non re-inventare ciò che è già stato deciso.
   flip, P.IVA, costi accollati. Alimenta la griglia, non la sostituisce.
 - [`fase1-mvp-spec.md`](./fase1-mvp-spec.md) — spec della Fase 1 (MVP notifica
   grezza): fonte, filtro geografico, schema DB, formato notifica, spike PVP.
+- [`pvp-api.md`](./pvp-api.md) — **come parlare col Portale Vendite Pubbliche**:
+  endpoint API, config discovery, corpo ricerca, schema risposta, insidia del
+  filtro geografico. Fonte di verità per `src/scraper.py`.
 
 ## Come si usa
 

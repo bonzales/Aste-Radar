@@ -25,19 +25,25 @@ confermare). Il tribunale che gestisce la vendita è irrilevante ai fini del fil
 - **Secondaria / fallback**: gestori (Astalegale, Aste Giudiziarie Inlinea) se il
   PVP risulta ostico da scrapare per queste zone.
 
-### ⚠️ Spike da fare PRIMA di scrivere lo scraper (rischio n.1)
+### ✅ Spike PVP FATTO (2026-07-05) — dettagli in `research/pvp-api.md`
 
-Non è ancora verificato **come** il PVP risponda a uno scraper `httpx` semplice:
-potrebbe esserci navigazione JS, token di sessione, o anti-bot. Primo passo di
-implementazione = uno *spike* di mezza giornata:
-1. Riprodurre a mano la ricerca immobili per "provincia = Venezia" e catturare
-   la/le richieste HTTP reali (URL, parametri, header, eventuali token).
-2. Verificare se la lista risultati è nell'HTML statico o caricata via JS/API.
-3. Salvare l'HTML/JSON grezzo in `raw/` e decidere: httpx+BS basta, oppure serve
-   un browser headless, oppure conviene partire dai gestori.
+Esito: il PVP è **scrapeabile via API JSON**, senza auth né anti-bot sugli
+endpoint di ricerca. NON serve browser headless né BeautifulSoup: si chiama l'API.
 
-Finché lo spike non chiarisce questo, lo scraper non si progetta nel dettaglio.
-(Coerente con §9.2: scraper = fixture + integrazione, non TDD a vuoto su HTML volatile.)
+- Endpoint: `POST …/ric-ms/ricerca/vendite` (URL completo + config discovery in
+  `pvp-api.md`), paginato, `sort=dataPubblicazione,desc` per i nuovi.
+- Risposta JSON con `body.content[]`; ogni lotto ha `id` (dedup stabile),
+  `descLotto`, `prezzoBaseAsta`, `dataVendita`, `indirizzo.{citta,provincia}`, e
+  molti extra utili dopo (`disponibilita`, `categoriaLotto`, coordinate…).
+- **Insidia geografica**: `regione`/`localita` come stringa NON filtrano; il
+  filtro vero della UI usa coordinate+raggio (payload non replicato). Strategia
+  adottata: `ricercaLibera:"<comune>"` + **filtro lato client** su
+  `indirizzo.provincia` ∈ {Venezia, Treviso} (il testo libero è sporco: "Mogliano
+  Veneto" pesca anche Macerata) + solo `IMMOBILE_RESIDENZIALE` + dedup per `id`.
+- httpx basta (curl nello spike). Fixtures reali in `tests/fixtures/pvp/`.
+
+(Coerente con §9.2: scraper = fixture + integrazione. Le fixture in
+`tests/fixtures/pvp/` alimentano i test del parser senza ri-scaricare.)
 
 ## Identità del lotto e idempotenza
 
@@ -113,11 +119,11 @@ fail loud). `downloader.py`/`parser.py`/`extractor.py`/`scorer.py` NON in Fase 1
 
 ## Piano di attacco (stato al 2026-07-05)
 
-1. ~~Spike PVP~~ → **BLOCCATO da qui**: l'ambiente Claude Code on web nega
-   l'egress verso `pvp.giustizia.it` (proxy: 403 al CONNECT, policy di rete).
-   Lo spike va eseguito **sul VPS** (rete libera). Checklist sotto.
-2. `scraper.py` sulla ricerca geografica + fixture HTML in `raw/` → **da fare
-   dopo lo spike** (serve HTML reale, non inventato — §1.2).
+1. ~~Spike PVP~~ → **FATTO** (2026-07-05): API scoperta e verificata con dati
+   reali. Dettagli in `research/pvp-api.md`. (La rete web era inizialmente
+   bloccata; sbloccata dall'utente aprendo l'egress dell'ambiente.)
+2. `scraper.py` sulla ricerca geografica → **PRONTO da scrivere**: endpoint,
+   corpo, schema risposta e strategia noti; fixtures reali in `tests/fixtures/pvp/`.
 3. ~~Layer DB + idempotenza~~ → **FATTO**: `src/models.py` (`Lotto`), `src/db.py`
    (`connect/init_db/upsert_lotto/lotti_da_notificare/segna_notificato`), test in
    `tests/test_db.py` (7 test verdi, coprono no-duplicati / no-re-notifica).
