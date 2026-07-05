@@ -32,6 +32,9 @@ class Lotto:
     # NON persistiti nel DB di Fase 1 (tornano None se riletti dal DB).
     categoria: str | None = None          # es. "IMMOBILE_RESIDENZIALE"
     data_pubblicazione: str | None = None  # ISO date
+    # Esito dell'analisi (Fase 3), persistito in DB:
+    punteggio: float | None = None
+    motivazione: str | None = None
     # Popolati dal DB, non dallo scraper:
     id: int | None = None
     prima_vista_il: str | None = None

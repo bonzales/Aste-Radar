@@ -67,14 +67,28 @@ def parse_risposta_ricerca(data: dict) -> list[Lotto]:
     return lotti
 
 
-def filtra_lotti(lotti: list[Lotto], target: TargetGeo) -> list[Lotto]:
-    """Tiene solo i lotti nell'area target (provincia/comune) e — se richiesto —
-    solo i residenziali. È il filtro che disinnesca i falsi positivi della fonte."""
+def filtra_lotti(
+    lotti: list[Lotto],
+    target: TargetGeo,
+    prezzo_max: float | None = None,
+    solo_future: bool = False,
+    oggi: "date | None" = None,
+) -> list[Lotto]:
+    """Filtro di LIVELLO 1 (gratis, solo dati della ricerca): tiene i lotti
+    nell'area target, residenziali, entro il tetto di prezzo e — se richiesto —
+    con vendita ancora da tenere. È il filtro che disinnesca i falsi positivi
+    della fonte PRIMA di spendere in download/OCR/IA."""
+    oggi_iso = (oggi or date.today()).isoformat()
     out = []
     for l in lotti:
         if not target.ammette(l.provincia, l.comune):
             continue
         if target.solo_residenziale and l.categoria != CATEGORIA_RESIDENZIALE:
+            continue
+        if prezzo_max is not None and l.prezzo_base is not None and l.prezzo_base > prezzo_max:
+            continue
+        # solo aste aperte: data vendita futura (se nota); se ignota, si tiene
+        if solo_future and l.data_vendita and l.data_vendita < oggi_iso:
             continue
         out.append(l)
     return out
@@ -137,26 +151,50 @@ class PvpClient:
 def scansiona(
     client: PvpClient,
     target: TargetGeo,
-    giorni_indietro: int = 7,
-    size: int = 100,
-    max_pagine: int = 40,
+    giorni_indietro: int = 14,
+    size: int = 200,
+    prezzo_max: float | None = None,
+    solo_future: bool = True,
+    max_pagine: int = 2000,
     oggi: date | None = None,
 ) -> list[Lotto]:
-    """Scorre i lotti pubblicati di recente e ritorna quelli nell'area target,
-    deduplicati per id. Si ferma quando la pagina scende sotto l'orizzonte
-    temporale (`giorni_indietro`) o non ci sono più pagine."""
+    """Scorre TUTTI gli immobili pubblicati nella finestra `giorni_indietro`
+    (ordinati per data di pubblicazione decrescente) e ritorna quelli dell'area
+    target, deduplicati per id. COMPLETEZZA: non c'è un tetto basso di pagine —
+    si scorre finché la finestra non è coperta. `max_pagine` è solo una valvola
+    di sicurezza; se scatta, la copertura è incompleta (lo segnala chi chiama).
+
+    `giorni_indietro`: usa un valore ampio al primo giro (backfill, es. 180) e
+    ridotto a regime (es. 14 per un giro settimanale, con margine sul gap).
+    """
     cutoff = ((oggi or date.today()) - timedelta(days=giorni_indietro)).isoformat()
     trovati: dict[str, Lotto] = {}
+    completa = False
     for page in range(max_pagine):
         data = client.cerca(page, size)
         lotti = parse_risposta_ricerca(data)
         if not lotti:
+            completa = True
             break
-        for l in filtra_lotti(lotti, target):
+        for l in filtra_lotti(lotti, target, prezzo_max=prezzo_max,
+                              solo_future=solo_future, oggi=oggi):
             trovati[l.id_esterno] = l
         pubblicazioni = [l.data_pubblicazione for l in lotti if l.data_pubblicazione]
         if pubblicazioni and min(pubblicazioni) < cutoff:
+            completa = True
             break
         if _body(data).get("last"):
+            completa = True
             break
+    if not completa:
+        # valvola di sicurezza scattata: la finestra non è stata coperta del tutto
+        raise CoperturaIncompleta(
+            f"raggiunto il tetto di {max_pagine} pagine senza coprire la finestra "
+            f"di {giorni_indietro} giorni: possibili lotti non visti"
+        )
     return list(trovati.values())
+
+
+class CoperturaIncompleta(RuntimeError):
+    """La scansione non ha coperto l'intera finestra temporale (valvola di
+    sicurezza): fail loud, non fingere completezza (CLAUDE.md §1.4)."""

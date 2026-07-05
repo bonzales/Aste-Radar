@@ -76,17 +76,18 @@ python -m src.main
 Se tutto va bene vedi una riga tipo `[aste-radar] trovati=.. nuovi=.. notificati=..`
 e ti arrivano i lotti su Telegram. (Al primo avvio arriva l'arretrato: normale.)
 
-## 5. Accendere la "sveglia" delle 07:00
+## 5. Accendere la "sveglia" (lunedì 07:00)
 
 ```bash
 crontab -e
 ```
 (Se chiede quale editor, scegli `nano` — il numero accanto.) In fondo incolla:
 ```
-0 7 * * * cd /root/aste-radar && /root/aste-radar/.venv/bin/python -m src.main >> /root/aste-radar/logs/aste.log 2>&1
+0 7 * * 1 cd /root/aste-radar && /root/aste-radar/.venv/bin/python -m src.main >> /root/aste-radar/logs/aste.log 2>&1
 ```
-Salva (**Ctrl+O**, Invio) ed esci (**Ctrl+X**). Fatto: da domani mattina
-aste-radar lavora da solo.
+Salva (**Ctrl+O**, Invio) ed esci (**Ctrl+X**). Fatto: da lunedì mattina
+aste-radar lavora da solo. (Il PRIMO giro recupera l'arretrato degli ultimi ~6
+mesi di aste ancora aperte; i giri dopo guardano solo le novità della settimana.)
 
 ## 6. Se qualcosa non torna
 

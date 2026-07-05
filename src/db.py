@@ -18,8 +18,18 @@ from src.models import Lotto
 # Colonne selezionate quando ricostruiamo un Lotto dal DB.
 _COLS = (
     "id, fonte, id_esterno, url, comune, provincia, titolo, prezzo_base, "
-    "data_vendita, raw_path, prima_vista_il, notificato_il"
+    "data_vendita, raw_path, prima_vista_il, notificato_il, "
+    "analizzato_il, esito_passa, punteggio, motivazione"
 )
+
+# Colonne aggiunte in Fase 3 (analisi): un lotto si analizza UNA volta sola
+# (download+OCR+IA costano), poi si conserva l'esito.
+_COLONNE_ANALISI = {
+    "analizzato_il": "TEXT",
+    "esito_passa": "INTEGER",
+    "punteggio": "REAL",
+    "motivazione": "TEXT",
+}
 
 
 def connect(path: str) -> sqlite3.Connection:
@@ -48,11 +58,24 @@ def init_db(conn: sqlite3.Connection) -> None:
             raw_path       TEXT,
             prima_vista_il TEXT NOT NULL,
             notificato_il  TEXT,
+            analizzato_il  TEXT,
+            esito_passa    INTEGER,
+            punteggio      REAL,
+            motivazione    TEXT,
             UNIQUE (fonte, id_esterno)
         )
         """
     )
+    _assicura_colonne(conn)
     conn.commit()
+
+
+def _assicura_colonne(conn: sqlite3.Connection) -> None:
+    """Aggiunge le colonne di analisi a un DB preesistente (migrazione leggera)."""
+    esistenti = {r["name"] for r in conn.execute("PRAGMA table_info(lotti)")}
+    for nome, tipo in _COLONNE_ANALISI.items():
+        if nome not in esistenti:
+            conn.execute(f"ALTER TABLE lotti ADD COLUMN {nome} {tipo}")
 
 
 def upsert_lotto(conn: sqlite3.Connection, lotto: Lotto, now: str) -> bool:
@@ -87,11 +110,39 @@ def upsert_lotto(conn: sqlite3.Connection, lotto: Lotto, now: str) -> bool:
     return cur.rowcount == 1
 
 
-def lotti_da_notificare(conn: sqlite3.Connection) -> list[Lotto]:
-    """Lotti mai notificati, in ordine di primo avvistamento."""
+def lotti_da_analizzare(conn: sqlite3.Connection) -> list[Lotto]:
+    """Lotti target non ancora analizzati (Livello 2): download+OCR+IA una volta sola."""
     rows = conn.execute(
-        f"SELECT {_COLS} FROM lotti WHERE notificato_il IS NULL "
+        f"SELECT {_COLS} FROM lotti WHERE analizzato_il IS NULL "
         f"ORDER BY prima_vista_il, id"
+    ).fetchall()
+    return [_row_to_lotto(r) for r in rows]
+
+
+def segna_analizzato(
+    conn: sqlite3.Connection,
+    lotto_id: int,
+    now: str,
+    passa: bool,
+    punteggio: float | None,
+    motivazione: str | None,
+) -> None:
+    """Registra l'esito dell'analisi. Idempotente: non ri-analizza (AND analizzato_il IS NULL)."""
+    conn.execute(
+        "UPDATE lotti SET analizzato_il=?, esito_passa=?, punteggio=?, motivazione=? "
+        "WHERE id=? AND analizzato_il IS NULL",
+        (now, 1 if passa else 0, punteggio, motivazione, lotto_id),
+    )
+    conn.commit()
+
+
+def lotti_da_notificare(conn: sqlite3.Connection) -> list[Lotto]:
+    """Lotti che hanno PASSATO l'analisi e non ancora notificati, dal punteggio più
+    alto. Solo i promossi si notificano (CLAUDE.md §5)."""
+    rows = conn.execute(
+        f"SELECT {_COLS} FROM lotti "
+        f"WHERE notificato_il IS NULL AND esito_passa = 1 "
+        f"ORDER BY punteggio DESC, prima_vista_il"
     ).fetchall()
     return [_row_to_lotto(r) for r in rows]
 
@@ -120,4 +171,6 @@ def _row_to_lotto(row: sqlite3.Row) -> Lotto:
         raw_path=row["raw_path"],
         prima_vista_il=row["prima_vista_il"],
         notificato_il=row["notificato_il"],
+        punteggio=row["punteggio"],
+        motivazione=row["motivazione"],
     )

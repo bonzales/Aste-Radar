@@ -51,6 +51,12 @@ def formatta_messaggio(lotto: Lotto) -> str:
         righe.append(f"💶 Base: {_euro(lotto.prezzo_base)}")
     if lotto.data_vendita:
         righe.append(f"🗓 Vendita: {lotto.data_vendita}")
+    if lotto.motivazione:
+        stelle = ""
+        if lotto.punteggio is not None:
+            n = 1 + round(lotto.punteggio * 4)  # 1..5
+            stelle = " " + "★" * n + "☆" * (5 - n)
+        righe.append(f"✅ {lotto.motivazione}{stelle}")
     if lotto.url:
         righe.append(f"🔗 {lotto.url}")
     return "\n".join(righe)

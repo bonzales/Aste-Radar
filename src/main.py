@@ -1,43 +1,105 @@
-"""Orchestratore del ciclo giornaliero di Fase 1 (CLAUDE.md §3, §4).
+"""Orchestratore del ciclo (CLAUDE.md §3, §4, §5) — funnel a livelli.
 
-ingest (scraper) -> persist idempotente (db) -> notify (telegram). Nessuna analisi.
-Idempotente: rilanciare non duplica né re-notifica. Fail loud: su errore avvisa
-su Telegram ed esce con codice != 0 (per cron/log).
+Livello 0/1 (gratis): scansiona TUTTI gli immobili nella finestra, tieni solo
+  quelli dell'area target, residenziali, entro budget, con vendita futura.
+Livello 2 (~cent): per ogni lotto NON ancora analizzato, scarica gli allegati,
+  OCR della perizia, estrazione IA, punteggio con la griglia. Una volta sola.
+Notifica: solo i lotti che PASSANO la griglia (§5), col dettaglio.
 
-Uso: python -m src.main
+Idempotente (rilanciare non duplica né ri-analizza né re-notifica) e fail loud
+(su errore avvisa Telegram, exit != 0). Uso: python -m src.main
 """
 
 from __future__ import annotations
 
 import sys
-from datetime import datetime
+from datetime import date, datetime
+
+import anthropic
 
 from src import db
 from src.config import carica_target
+from src.downloader import parse_allegati, scarica_allegati
+from src.extractor import PeriziaEstratta, estrai_perizia
 from src.notifier import TelegramNotifier, leggi_secrets
+from src.parser import estrai_testo
+from src.scorer import Esito, carica_griglia, valuta
 from src.scraper import PvpClient, scansiona
 
 DB_PATH = "db/aste.sqlite"
-GIORNI_INDIETRO = 7
+GIORNI_SETTIMANALE = 14     # giro settimanale: 14 gg coprono il gap con margine
+GIORNI_BACKFILL = 180       # primo giro (DB vuoto): recupera l'arretrato aperto
+MAX_PAGINE_OCR = 60         # profondità OCR per perizia (i dati chiave stanno qui)
 
 
-def esegui(client, notifier, conn, target, giorni_indietro=GIORNI_INDIETRO, now=None):
-    """Nucleo testabile del run. Ritorna le statistiche del giro.
+def _analizza_lotto(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr) -> Esito:
+    """Livello 2 su un singolo lotto: allegati -> OCR perizia -> IA -> griglia."""
+    dettaglio = client.dettaglio_vendita(lotto.id_esterno)
+    allegati = parse_allegati(dettaglio)
+    perizie = [a for a in allegati if a.is_perizia]
+    if not perizie:
+        return Esito(passa=False, sconto=None, punteggio=None,
+                     da_verificare=["perizia non disponibile"])
 
-    Idempotenza: `upsert_lotto` non re-inserisce i lotti già visti; si notificano
-    solo quelli con `notificato_il IS NULL`, marcandoli subito dopo l'invio.
-    """
+    salvati = scarica_allegati(client, lotto, dir_base=dir_raw)
+    from src.downloader import nome_file_sicuro
+    atteso = nome_file_sicuro(perizie[0].nome_file)
+    perizia_path = next((p for p in salvati if p.name == atteso), None)
+    if perizia_path is None:
+        return Esito(passa=False, sconto=None, punteggio=None,
+                     da_verificare=["perizia non scaricata"])
+
+    testo = estrai_testo(perizia_path, max_pagine=max_pagine_ocr)
+    if testo.metodo == "vuoto":
+        return Esito(passa=False, sconto=None, punteggio=None,
+                     da_verificare=["perizia illeggibile"])
+
+    dati: PeriziaEstratta = estrai_perizia(ai_client, testo.testo)
+    return valuta(lotto, dati, griglia)
+
+
+def _riassunto_esito(esito: Esito) -> str:
+    if esito.passa:
+        return esito.motivazione_breve()
+    if esito.scarti:
+        return "SCARTO: " + "; ".join(esito.scarti)
+    if esito.da_verificare:
+        return "DA VERIFICARE: " + "; ".join(esito.da_verificare)
+    return "scartato"
+
+
+def esegui(client, ai_client, notifier, conn, target, griglia, *,
+           giorni_indietro, prezzo_max, dir_raw="raw",
+           max_pagine_ocr=MAX_PAGINE_OCR, now=None):
+    """Nucleo testabile del run (funnel completo). Ritorna le statistiche."""
     now = now or datetime.now().isoformat(timespec="seconds")
-    lotti = scansiona(client, target, giorni_indietro=giorni_indietro)
+
+    # Livello 0/1: scansione completa della finestra + filtro area/budget/futuro
+    lotti = scansiona(client, target, giorni_indietro=giorni_indietro, prezzo_max=prezzo_max)
     nuovi = sum(1 for l in lotti if db.upsert_lotto(conn, l, now))
 
+    # Livello 2: analizza (una volta) i lotti non ancora analizzati
+    analizzati = errori = 0
+    for lotto in db.lotti_da_analizzare(conn):
+        try:
+            esito = _analizza_lotto(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr)
+        except Exception as exc:  # errore transitorio: lascia da ri-analizzare
+            errori += 1
+            print(f"[aste-radar] analisi lotto {lotto.id_esterno} fallita: {exc}", file=sys.stderr)
+            continue
+        db.segna_analizzato(conn, lotto.id, now, esito.passa, esito.punteggio,
+                            _riassunto_esito(esito))
+        analizzati += 1
+
+    # Notifica: solo i promossi non ancora notificati
     notificati = 0
     for lotto in db.lotti_da_notificare(conn):
         notifier.invia_lotto(lotto)
         db.segna_notificato(conn, lotto.id, now)
         notificati += 1
 
-    return {"trovati": len(lotti), "nuovi": nuovi, "notificati": notificati}
+    return {"trovati": len(lotti), "nuovi": nuovi, "analizzati": analizzati,
+            "errori_analisi": errori, "notificati": notificati}
 
 
 def main() -> int:
@@ -45,20 +107,29 @@ def main() -> int:
     try:
         secrets = leggi_secrets()
         target = carica_target()
+        griglia = carica_griglia()
+        prezzo_max = (griglia.get("hard") or {}).get("prezzo_base_max")
+
         notifier = TelegramNotifier.da_secrets(secrets)
+        ai_client = anthropic.Anthropic(api_key=secrets.get("ANTHROPIC_API_KEY"))
 
         conn = db.connect(DB_PATH)
         db.init_db(conn)
+        # primo giro (DB vuoto) = backfill ampio; poi finestra settimanale
+        vuoto = conn.execute("SELECT COUNT(*) FROM lotti").fetchone()[0] == 0
+        giorni = GIORNI_BACKFILL if vuoto else GIORNI_SETTIMANALE
 
         client = PvpClient()
         client.scopri_config()
 
-        stats = esegui(client, notifier, conn, target)
+        stats = esegui(client, ai_client, notifier, conn, target, griglia,
+                       giorni_indietro=giorni, prezzo_max=prezzo_max)
         client.close()
         conn.close()
         print(
-            f"[aste-radar] trovati={stats['trovati']} nuovi={stats['nuovi']} "
-            f"notificati={stats['notificati']}"
+            f"[aste-radar] finestra={giorni}gg trovati={stats['trovati']} "
+            f"nuovi={stats['nuovi']} analizzati={stats['analizzati']} "
+            f"errori={stats['errori_analisi']} notificati={stats['notificati']}"
         )
         return 0
     except Exception as exc:  # fail loud (CLAUDE.md §1.4)

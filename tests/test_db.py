@@ -43,7 +43,7 @@ def test_connect_su_file_imposta_row_factory_e_persiste(tmp_path):
     c.close()
     # riaprendo il file il lotto è ancora lì e i lettori funzionano (row_factory ok)
     c2 = db.connect(percorso)
-    assert db.lotti_da_notificare(c2)[0].id_esterno == "P1"
+    assert db.lotti_da_analizzare(c2)[0].id_esterno == "P1"
     c2.close()
 
 
@@ -83,17 +83,35 @@ def test_fonte_diversa_stesso_id_esterno_sono_lotti_distinti(conn):
     assert conn.execute("SELECT COUNT(*) FROM lotti").fetchone()[0] == 2
 
 
-def test_lotti_da_notificare_solo_non_notificati(conn):
-    db.upsert_lotto(conn, _lotto(id_esterno="A"), now="t0")
-    db.upsert_lotto(conn, _lotto(id_esterno="B"), now="t0")
+def _id_riga(conn, id_esterno):
+    return conn.execute("SELECT id FROM lotti WHERE id_esterno=?", (id_esterno,)).fetchone()["id"]
+
+
+def test_da_analizzare_e_segna_analizzato():
+    c = sqlite3.connect(":memory:"); c.row_factory = sqlite3.Row; db.init_db(c)
+    db.upsert_lotto(c, _lotto(id_esterno="A"), now="t0")
+    assert {l.id_esterno for l in db.lotti_da_analizzare(c)} == {"A"}
+    db.segna_analizzato(c, _id_riga(c, "A"), now="t1", passa=True, punteggio=0.7, motivazione="ok")
+    # analizzato → non torna nella coda di analisi
+    assert db.lotti_da_analizzare(c) == []
+    c.close()
+
+
+def test_notificare_solo_i_lotti_promossi(conn):
+    db.upsert_lotto(conn, _lotto(id_esterno="PASS"), now="t0")
+    db.upsert_lotto(conn, _lotto(id_esterno="SCART"), now="t0")
+    # non ancora analizzati → coda notifica vuota (§5: si notifica solo dopo analisi)
+    assert db.lotti_da_notificare(conn) == []
+    db.segna_analizzato(conn, _id_riga(conn, "PASS"), "t1", passa=True, punteggio=0.9, motivazione="ottimo")
+    db.segna_analizzato(conn, _id_riga(conn, "SCART"), "t1", passa=False, punteggio=None, motivazione="SCARTO")
     da_notificare = db.lotti_da_notificare(conn)
-    assert {l.id_esterno for l in da_notificare} == {"A", "B"}
-    # i risultati sono oggetti Lotto con id di riga valorizzato
-    assert all(isinstance(l, Lotto) and l.id is not None for l in da_notificare)
+    assert [l.id_esterno for l in da_notificare] == ["PASS"]
+    assert da_notificare[0].motivazione == "ottimo"
 
 
 def test_segna_notificato_rimuove_dalla_coda_ed_e_idempotente(conn):
     db.upsert_lotto(conn, _lotto(id_esterno="A"), now="t0")
+    db.segna_analizzato(conn, _id_riga(conn, "A"), "t1", passa=True, punteggio=0.5, motivazione="ok")
     lotto = db.lotti_da_notificare(conn)[0]
     db.segna_notificato(conn, lotto.id, now="2026-07-05T07:05:00")
     assert db.lotti_da_notificare(conn) == []
