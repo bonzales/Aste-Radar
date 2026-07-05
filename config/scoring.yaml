@@ -1,0 +1,49 @@
+# La griglia di screening: soglie e pesi. È il "cervello" decisionale.
+# scorer.py legge questo file (CLAUDE.md §3.3, §5). Il razionale — PERCHÉ questi
+# valori — vive in research/scoring.md, non qui.
+#
+# DECISIONE APERTA (CLAUDE.md §12): pesi e soglie esatti non ancora fissati.
+# I valori qui sono PLACEHOLDER commentati, NON tarati. Vanno decisi con l'utente
+# (brainstorming §9) e poi giustificati in research/scoring.md prima di andare in
+# produzione. Finché "tarato: false", scorer.py deve rifiutarsi di girare in prod.
+#
+# NOTA anti-illusione (CLAUDE.md §5): i criteri "hard" sono gate binari. Un solo
+# criterio hard mancante = scarto silenzioso, niente notifica. Non ammorbidire.
+
+tarato: false   # metti true solo dopo aver deciso e giustificato i valori
+
+# --- Criteri HARD (gate binari: se falliti, scarto silenzioso) ---
+hard:
+  # Sconto minimo del prezzo base sul valore di stima perché valga la pena.
+  # es. 0.30 = prezzo base almeno 30% sotto la stima.
+  sconto_min_su_stima: null        # TODO decidere
+
+  # Zone ammesse (riferite a research/comuni.md). es. ["A", "B"]
+  zone_ammesse: null               # TODO decidere
+
+  # Categorie catastali ammesse. Ricorda prezzo-valore: A tranne A/10 (CLAUDE.md §11).
+  categorie_ammesse: null          # TODO decidere
+
+  # Occupazione: quali situazioni sono accettabili.
+  #   libero              -> ok
+  #   occupato_debitore   -> liberabile, valutabile
+  #   contratto_opponibile-> scarto per uso proprio (CLAUDE.md §11)
+  occupazione_ammessa: null        # TODO decidere
+
+  # Abusi/difformità insanabili = scarto hard (CLAUDE.md §11).
+  scarta_se_abusi_insanabili: true
+
+  # Filtri dimensionali (mq). Lasciare null = nessun limite.
+  superficie_mq_min: null          # TODO decidere
+  superficie_mq_max: null          # TODO decidere
+
+# --- Pesi SOFT (per ordinare/priorizzare i lotti che passano i gate hard) ---
+# Sommano idealmente a 1.0. Alimentano il punteggio + la motivazione leggibile.
+soft:
+  peso_sconto_su_stima: null       # TODO decidere
+  peso_zona: null                  # TODO decidere
+  peso_occupazione: null           # TODO decidere
+  peso_categoria: null             # TODO decidere
+
+# Soglia di punteggio soft sopra cui notificare (dopo aver passato i gate hard).
+soglia_notifica: null              # TODO decidere

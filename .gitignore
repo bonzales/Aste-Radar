@@ -1,0 +1,45 @@
+# === Segreti — MAI committare (vedi CLAUDE.md §10) ===
+config/secrets.env
+*.env
+!config/secrets.env.example
+
+# === Fonte grezza immutabile — non entra in git (vedi CLAUDE.md §1) ===
+# raw/ è la fonte di verità locale/VPS, non un artefatto di repo.
+raw/*
+!raw/.gitkeep
+
+# === Stato / DB ===
+db/*.sqlite
+db/*.sqlite-journal
+db/*.sqlite-wal
+db/*.sqlite-shm
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# === Test / tooling ===
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# === Claude Code — stato locale di sessione (non condiviso) ===
+.claude/settings.local.json
+
+# === OS / editor ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

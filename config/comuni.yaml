@@ -1,0 +1,25 @@
+# Comuni target + tribunale di competenza.
+# È la lista che lo scraper interroga (CLAUDE.md §3, §8).
+#
+# DECISIONE APERTA (CLAUDE.md §12): elenco definitivo dei comuni e verifica
+# della circoscrizione. Venezia copre Spinea/Martellago/Mirano/Mira/Dolo?
+# → NON inventare la competenza: confermare sul Portale Vendite Pubbliche
+#   (pvp.giustizia.it) prima di attivare lo scraper su un comune.
+#
+# Schema di ogni voce:
+#   - nome:        nome del comune (come compare sul PVP)
+#   - provincia:   sigla (es. VE)
+#   - tribunale:   tribunale competente (DA VERIFICARE, non assumere)
+#   - microzona:   nota libera / riferimento a research/comuni.md
+#   - attivo:      true = lo scraper lo interroga; false = in attesa di verifica
+
+comuni:
+  # --- DA COMPILARE E VERIFICARE CON L'UTENTE (CLAUDE.md §12) ---
+  # Esempio di struttura (NON attivo finché la competenza non è confermata):
+  #
+  # - nome: Spinea
+  #   provincia: VE
+  #   tribunale: "DA VERIFICARE"
+  #   microzona: "residenza utente — vantaggio informativo, vedi research/comuni.md"
+  #   attivo: false
+  []
