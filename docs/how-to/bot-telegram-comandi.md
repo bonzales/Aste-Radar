@@ -36,6 +36,35 @@ systemctl status aste-radar-bot --no-pager
 
 Da ora il bot è sempre in ascolto e riparte da solo se il server si riavvia.
 
+## Condividere il bot con un'altra persona (es. partner)
+
+I bot Telegram **non si condividono con un link di chat**: ogni persona parla col
+bot nella propria chat. Per abilitare qualcun altro (riceve le notifiche **e** può
+usare i comandi):
+
+1. **L'altra persona avvia il bot**: cerca il bot per nome utente, preme *Start*
+   e scrive `/status`. Il bot le risponde che il chat non è autorizzato e **le
+   mostra il suo id** (un numero).
+2. **Aggiungi quell'id ai segreti**, separato da una virgola dal tuo:
+   ```bash
+   nano /root/aste-radar/config/secrets.env
+   ```
+   ```
+   TELEGRAM_CHAT_ID=1288729394,987654321
+   ```
+   (Salva con Ctrl+O, Invio, esci con Ctrl+X.)
+3. **Riavvia il bot** perché rilegga la lista:
+   ```bash
+   systemctl restart aste-radar-bot
+   ```
+
+Fatto: da ora le notifiche delle aste arrivano a **entrambi** e entrambi possono
+usare i comandi. Per togliere qualcuno, rimuovi il suo id dalla lista e riavvia.
+
+> In alternativa puoi mettere il bot in un **gruppo** con più persone: l'id da
+> autorizzare diventa quello del gruppo (un numero negativo), che il bot ti mostra
+> con lo stesso metodo (scrivi `/status` nel gruppo).
+
 ## Comandi utili
 
 ```bash

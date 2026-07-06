@@ -55,15 +55,45 @@ def _euro(v) -> str:
 
 # --- Logica pura, testabile -------------------------------------------------
 
-def messaggio_autorizzato(update: dict, chat_id_autorizzato) -> str | None:
-    """Ritorna il testo del messaggio SOLO se proviene dal chat autorizzato,
-    altrimenti None. È il gate di sicurezza del bot."""
+def chat_autorizzati(valore) -> set[str]:
+    """Insieme dei chat id autorizzati. Ammette un id singolo o più id separati
+    da virgola/punto e virgola (per condividere il bot con più persone)."""
+    if valore is None:
+        return set()
+    if isinstance(valore, (set, list, tuple)):
+        grezzi = [str(v) for v in valore]
+    else:
+        grezzi = str(valore).replace(";", ",").split(",")
+    return {c.strip() for c in grezzi if c.strip()}
+
+
+def estrai_chat_e_testo(update: dict) -> tuple[str, str] | None:
+    """(chat_id, testo) del messaggio, o None se l'update non è un messaggio."""
     msg = update.get("message") or update.get("edited_message")
     if not msg:
         return None
-    if str((msg.get("chat") or {}).get("id")) != str(chat_id_autorizzato):
+    return str((msg.get("chat") or {}).get("id")), (msg.get("text") or "")
+
+
+def messaggio_autorizzato(update: dict, autorizzati) -> str | None:
+    """Ritorna il testo del messaggio SOLO se proviene da un chat autorizzato,
+    altrimenti None. È il gate di sicurezza del bot."""
+    estratto = estrai_chat_e_testo(update)
+    if estratto is None:
         return None
-    return msg.get("text") or ""
+    chat_id, testo = estratto
+    return testo if chat_id in chat_autorizzati(autorizzati) else None
+
+
+def testo_non_autorizzato(chat_id: str) -> str:
+    """Risposta a un chat non autorizzato: gli comunica il suo id così il
+    proprietario può aggiungerlo (è il modo per condividere il bot)."""
+    return (
+        "🔒 Questo chat non è autorizzato a usare il bot.\n"
+        f"Id di questo chat: {chat_id}\n"
+        "Per essere abilitato, chiedi al proprietario di aggiungere questo id in "
+        "config/secrets.env (TELEGRAM_CHAT_ID, separato da virgola)."
+    )
 
 
 def _conta_stato(conn) -> dict:
@@ -195,8 +225,8 @@ def esegui_bot() -> None:
 
     secrets = leggi_secrets()
     token = secrets.get("TELEGRAM_BOT_TOKEN")
-    chat_id = secrets.get("TELEGRAM_CHAT_ID")
-    if not token or not chat_id:
+    autorizzati = chat_autorizzati(secrets.get("TELEGRAM_CHAT_ID"))
+    if not token or not autorizzati:
         raise RuntimeError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID mancanti in config/secrets.env")
 
     conn = db.connect(DB_PATH)
@@ -219,15 +249,20 @@ def esegui_bot() -> None:
             continue
         for u in updates:
             offset = u["update_id"] + 1
-            testo = messaggio_autorizzato(u, chat_id)
-            if testo is None:
+            estratto = estrai_chat_e_testo(u)
+            if estratto is None:
                 continue
-            try:
-                # griglia/target riletti a ogni comando: riflette i cambi di config
-                griglia = carica_griglia()
-                risposta = gestisci_comando(testo, conn=conn, griglia=griglia, avvia_scan=avvia_scan)
-            except Exception as exc:
-                risposta = f"⚠️ Errore nell'eseguire il comando: {exc}"
+            chat_id, testo = estratto
+            if chat_id not in autorizzati:
+                # non autorizzato: gli diciamo il suo id così può essere aggiunto
+                risposta = testo_non_autorizzato(chat_id)
+            else:
+                try:
+                    # griglia riletta a ogni comando: riflette i cambi di config
+                    griglia = carica_griglia()
+                    risposta = gestisci_comando(testo, conn=conn, griglia=griglia, avvia_scan=avvia_scan)
+                except Exception as exc:
+                    risposta = f"⚠️ Errore nell'eseguire il comando: {exc}"
             if risposta:
                 try:
                     _invia(http, token, chat_id, risposta)

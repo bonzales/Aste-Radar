@@ -31,6 +31,19 @@ def leggi_secrets(path: str | Path = "config/secrets.env") -> dict[str, str]:
     return valori
 
 
+def lista_chat_id(valore) -> list[str]:
+    """Normalizza il valore di TELEGRAM_CHAT_ID in una lista di id. Ammette un
+    singolo id o più id separati da virgola/punto e virgola (per condividere le
+    notifiche con più persone)."""
+    if valore is None:
+        return []
+    if isinstance(valore, (list, tuple, set)):
+        grezzi = [str(v) for v in valore]
+    else:
+        grezzi = str(valore).replace(";", ",").split(",")
+    return [c.strip() for c in grezzi if c.strip()]
+
+
 def _euro(v: float | None) -> str | None:
     if v is None:
         return None
@@ -67,17 +80,19 @@ def formatta_messaggio(lotto: Lotto) -> str:
 class TelegramNotifier:
     """Invio one-way su Telegram tramite Bot API."""
 
-    def __init__(self, token: str, chat_id: str, http: httpx.Client | None = None):
+    def __init__(self, token: str, chat_id, http: httpx.Client | None = None):
         self._token = token
-        self._chat_id = chat_id
+        # uno o più destinatari: le notifiche vanno a tutti gli id autorizzati.
+        self._chat_ids = lista_chat_id(chat_id)
         self._http = http or httpx.Client(timeout=30.0)
 
     def _invia(self, testo: str) -> None:
-        resp = self._http.post(
-            f"https://api.telegram.org/bot{self._token}/sendMessage",
-            json={"chat_id": self._chat_id, "text": testo, "disable_web_page_preview": True},
-        )
-        resp.raise_for_status()
+        for chat_id in self._chat_ids:
+            resp = self._http.post(
+                f"https://api.telegram.org/bot{self._token}/sendMessage",
+                json={"chat_id": chat_id, "text": testo, "disable_web_page_preview": True},
+            )
+            resp.raise_for_status()
 
     def invia_lotto(self, lotto: Lotto) -> None:
         self._invia(formatta_messaggio(lotto))

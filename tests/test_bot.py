@@ -49,7 +49,7 @@ GRIGLIA = {
 }
 
 
-# --- sicurezza: solo il chat autorizzato ---
+# --- sicurezza: solo i chat autorizzati ---
 
 def test_messaggio_da_chat_autorizzato_passa():
     upd = {"update_id": 1, "message": {"chat": {"id": 1288729394}, "text": "/status"}}
@@ -63,6 +63,25 @@ def test_messaggio_da_altro_chat_ignorato():
 
 def test_update_senza_messaggio_ignorato():
     assert bot.messaggio_autorizzato({"update_id": 1}, "1288729394") is None
+
+
+def test_piu_chat_autorizzati_da_lista_separata_da_virgola():
+    autorizzati = bot.chat_autorizzati("1288729394, 987654321")
+    assert autorizzati == {"1288729394", "987654321"}
+    upd = {"update_id": 1, "message": {"chat": {"id": 987654321}, "text": "/status"}}
+    # un secondo id (es. la persona con cui condivido) è autorizzato
+    assert bot.messaggio_autorizzato(upd, "1288729394,987654321") == "/status"
+
+
+def test_estrai_chat_e_testo():
+    upd = {"update_id": 1, "message": {"chat": {"id": 555}, "text": "/lotto 1"}}
+    assert bot.estrai_chat_e_testo(upd) == ("555", "/lotto 1")
+
+
+def test_testo_non_autorizzato_contiene_lid_per_aggiungerlo():
+    msg = bot.testo_non_autorizzato("987654321")
+    assert "987654321" in msg
+    assert "non è autorizzato" in msg.lower()
 
 
 # --- dispatch dei comandi ---
