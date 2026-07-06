@@ -136,6 +136,14 @@ def test_scan_senza_avvio_disponibile(conn):
     assert "non disponibile" in r.lower()
 
 
+def test_rinvia_invoca_avvio_e_conferma(conn):
+    chiamato = []
+    r = bot.gestisci_comando("/rinvia", conn=conn, griglia=GRIGLIA,
+                             avvia_reinvio=lambda: chiamato.append(True))
+    assert chiamato == [True]
+    assert "re-invio" in r.lower()
+
+
 def test_comando_sconosciuto(conn):
     r = bot.gestisci_comando("/pippo", conn=conn, griglia=GRIGLIA)
     assert "sconosciuto" in r.lower()

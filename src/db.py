@@ -149,6 +149,18 @@ def lotti_da_notificare(conn: sqlite3.Connection) -> list[Lotto]:
     return [_row_to_lotto(r) for r in rows]
 
 
+def lotti_promettenti(conn: sqlite3.Connection) -> list[Lotto]:
+    """TUTTI i lotti interessanti (promossi=1 e da verificare=2), a prescindere da
+    quando/se sono già stati notificati. Serve per re-inviare l'attuale rosa (es.
+    quando si aggiunge un nuovo destinatario). Stesso ordine di lotti_da_notificare."""
+    rows = conn.execute(
+        f"SELECT {_COLS} FROM lotti "
+        f"WHERE esito_passa IN (1, 2) "
+        f"ORDER BY esito_passa ASC, punteggio DESC, prima_vista_il"
+    ).fetchall()
+    return [_row_to_lotto(r) for r in rows]
+
+
 def segna_notificato(conn: sqlite3.Connection, lotto_id: int, now: str) -> None:
     """Marca il lotto come notificato. Idempotente: se già marcato, non tocca il
     timestamp esistente (la clausola AND notificato_il IS NULL protegge)."""

@@ -39,6 +39,8 @@ AIUTO = (
     "/lotto <id> — dettaglio di un lotto (id del portale, es. /lotto 4575509)\n"
     "/soglie — la griglia di screening attuale\n"
     "/scan — lancia subito una scansione (i lotti promossi arrivano qui)\n"
+    "/rinvia — rimanda tutti i lotti interessanti già trovati (utile dopo aver "
+    "aggiunto una persona)\n"
     "/help — questo messaggio\n\n"
     "Per CAMBIARE le soglie della griglia scrivi a Claude Code: le modifiche "
     "al codice/config si applicano da sole al giro successivo."
@@ -173,7 +175,8 @@ def formatta_soglie(griglia: dict) -> str:
     return "\n".join(righe)
 
 
-def gestisci_comando(testo: str, *, conn, griglia: dict, avvia_scan=None) -> str | None:
+def gestisci_comando(testo: str, *, conn, griglia: dict, avvia_scan=None,
+                     avvia_reinvio=None) -> str | None:
     """Traduce un messaggio in una risposta. Ritorna None se non c'è nulla da
     rispondere. Funzione pura rispetto all'I/O di rete (testabile)."""
     testo = (testo or "").strip()
@@ -199,6 +202,11 @@ def gestisci_comando(testo: str, *, conn, griglia: dict, avvia_scan=None) -> str
             return "Scansione non disponibile."
         avvia_scan()
         return "🔍 Scansione avviata. Ti avviso qui con i lotti promossi (può volerci qualche minuto)."
+    if comando == "rinvia":
+        if avvia_reinvio is None:
+            return "Re-invio non disponibile."
+        avvia_reinvio()
+        return "📤 Re-invio della rosa attuale avviato: i lotti interessanti arrivano a tutti i destinatari."
     return f"Comando sconosciuto: /{comando}. Scrivi /help."
 
 
@@ -237,6 +245,9 @@ def esegui_bot() -> None:
         # sé; evita problemi di concorrenza SQLite tra thread.
         subprocess.Popen([sys.executable, "-m", "src.main"], cwd=os.getcwd())
 
+    def avvia_reinvio() -> None:
+        subprocess.Popen([sys.executable, "-m", "src.rinvia"], cwd=os.getcwd())
+
     http = httpx.Client(timeout=70.0)
     offset: int | None = None
     print("[aste-radar bot] in ascolto...", flush=True)
@@ -260,7 +271,8 @@ def esegui_bot() -> None:
                 try:
                     # griglia riletta a ogni comando: riflette i cambi di config
                     griglia = carica_griglia()
-                    risposta = gestisci_comando(testo, conn=conn, griglia=griglia, avvia_scan=avvia_scan)
+                    risposta = gestisci_comando(testo, conn=conn, griglia=griglia,
+                                                avvia_scan=avvia_scan, avvia_reinvio=avvia_reinvio)
                 except Exception as exc:
                     risposta = f"⚠️ Errore nell'eseguire il comando: {exc}"
             if risposta:

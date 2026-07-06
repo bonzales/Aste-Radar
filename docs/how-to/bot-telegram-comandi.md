@@ -15,6 +15,7 @@ cron del sabato). Gira nella cartella di aste-radar, non tocca il bot Kraken.
 | `/lotto <id>` | dettaglio di un lotto già visto, es. `/lotto 4575509` |
 | `/soglie` | mostra la griglia di screening attuale |
 | `/scan` | lancia **subito** una scansione; i lotti promossi arrivano come notifiche |
+| `/rinvia` | rimanda tutti i lotti interessanti già trovati (utile dopo aver aggiunto una persona) |
 | `/help` | l'elenco dei comandi |
 
 Le soglie della griglia si **cambiano** scrivendo a Claude Code (non da Telegram):
