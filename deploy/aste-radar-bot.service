@@ -1,0 +1,17 @@
+[Unit]
+Description=aste-radar - bot Telegram a comandi (/scan, /status, /lotto, /soglie)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adatta il percorso se il repo non è in /root/aste-radar
+WorkingDirectory=/root/aste-radar
+ExecStart=/root/aste-radar/.venv/bin/python -m src.bot
+Restart=always
+RestartSec=10
+# Riavvio robusto: se cade, riparte da solo
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target
