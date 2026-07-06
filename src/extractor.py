@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import re
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 MODELLO_BASE = "claude-haiku-4-5"
 MODELLO_ESCALATION = "claude-sonnet-5"
@@ -95,32 +95,72 @@ SYSTEM_PROMPT = (
 )
 
 
-def _schema_json() -> str:
-    """Template del JSON atteso, generato dallo schema pydantic (resta in sync)."""
-    righe = [
-        f'  "{nome}": null   // {campo.description}'
+def _legenda_campi() -> str:
+    """Significato dei campi, come testo (NON come commenti nel JSON: il modello
+    tende a copiarli nell'output rendendolo JSON non valido)."""
+    return "\n".join(
+        f"- {nome}: {campo.description}"
         for nome, campo in PeriziaEstratta.model_fields.items()
-    ]
-    return "{\n" + "\n".join(righe) + "\n}"
+    )
+
+
+def _schema_json() -> str:
+    """Scheletro JSON PULITO (solo chiavi + null), senza commenti, generato dallo
+    schema pydantic così resta in sync."""
+    righe = [f'  "{nome}": null' for nome in PeriziaEstratta.model_fields]
+    return "{\n" + ",\n".join(righe) + "\n}"
 
 
 def costruisci_messaggio(testo_perizia: str) -> str:
     return (
-        "Estrai i dati chiave dalla seguente perizia e restituiscili in questo schema "
-        "JSON (usa null dove il dato non è presente):\n"
+        "Estrai i dati chiave dalla seguente perizia.\n"
+        "Significato dei campi:\n"
+        + _legenda_campi()
+        + "\n\nRispondi con QUESTO schema JSON e nient'altro (solo valori, nessun "
+        "commento; usa null dove il dato non è presente):\n"
         + _schema_json()
         + "\n\n=== PERIZIA ===\n"
         + testo_perizia
     )
 
 
-def _parse_json_risposta(testo_out: str) -> dict:
-    """Estrae l'oggetto JSON dalla risposta del modello (tollera eventuale testo
-    o backtick attorno)."""
-    m = re.search(r"\{.*\}", testo_out, re.DOTALL)
-    if not m:
+def _estrai_oggetto_json(testo_out: str) -> str:
+    """Isola il PRIMO oggetto JSON bilanciato nella risposta, rispettando le
+    stringhe. Tollera testo/backtick prima e prosa dopo l'oggetto (il match
+    greedy `\\{.*\\}` sbagliava afferrando fino all'ultima `}` del testo). Se le
+    graffe non si chiudono, la risposta è troncata → errore esplicito."""
+    inizio = testo_out.find("{")
+    if inizio == -1:
         raise ValueError("nessun oggetto JSON nella risposta del modello")
-    return json.loads(m.group(0))
+    profondita = 0
+    in_stringa = False
+    escape = False
+    for i in range(inizio, len(testo_out)):
+        c = testo_out[i]
+        if in_stringa:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                in_stringa = False
+        elif c == '"':
+            in_stringa = True
+        elif c == "{":
+            profondita += 1
+        elif c == "}":
+            profondita -= 1
+            if profondita == 0:
+                return testo_out[inizio : i + 1]
+    raise ValueError("oggetto JSON incompleto nella risposta del modello (troncato?)")
+
+
+def _parse_json_risposta(testo_out: str) -> dict:
+    """Estrae e decodifica l'oggetto JSON dalla risposta del modello. Tollera
+    testo/backtick attorno, prosa dopo l'oggetto e virgole pendenti."""
+    blob = _estrai_oggetto_json(testo_out)
+    blob = re.sub(r",\s*([}\]])", r"\1", blob)  # virgole pendenti prima di } o ]
+    return json.loads(blob)
 
 
 def conta_campi_sostanziali(estratta: PeriziaEstratta) -> int:
@@ -146,7 +186,7 @@ def verifica_ai(client, modello: str = MODELLO_BASE) -> None:
 def _estrai_con_modello(client, testo_perizia: str, modello: str) -> PeriziaEstratta:
     resp = client.messages.create(
         model=modello,
-        max_tokens=2048,
+        max_tokens=4096,  # perizie lunghe: evita il troncamento del JSON
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": costruisci_messaggio(testo_perizia)}],
     )
@@ -160,10 +200,17 @@ def estrai_perizia(
     modello_base: str = MODELLO_BASE,
     modello_escalation: str | None = MODELLO_ESCALATION,
 ) -> PeriziaEstratta:
-    """Estrae i dati dalla perizia. Prova col modello base; se l'esito è povero e
-    l'escalation è abilitata, riprova una volta col modello forte e tiene il
-    risultato migliore (più campi sostanziali valorizzati)."""
-    estratta = _estrai_con_modello(client, testo_perizia, modello_base)
+    """Estrae i dati dalla perizia. Prova col modello base; se l'esito è povero (o
+    il JSON del base non è interpretabile) e l'escalation è abilitata, riprova una
+    volta col modello forte e tiene il risultato migliore (più campi valorizzati)."""
+    try:
+        estratta = _estrai_con_modello(client, testo_perizia, modello_base)
+    except (ValueError, ValidationError):
+        # JSON del modello base non decodificabile: l'ultima carta è il modello
+        # forte. Se fallisce pure lui, propaga (il chiamante lo gestisce a monte).
+        if modello_escalation:
+            return _estrai_con_modello(client, testo_perizia, modello_escalation)
+        raise
     if modello_escalation and serve_escalation(estratta):
         forte = _estrai_con_modello(client, testo_perizia, modello_escalation)
         if conta_campi_sostanziali(forte) > conta_campi_sostanziali(estratta):

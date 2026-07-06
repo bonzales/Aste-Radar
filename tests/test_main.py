@@ -110,6 +110,30 @@ def test_analisi_tutta_fallita_fa_fail_loud(conn, monkeypatch):
                         {"hard": {}}, giorni_indietro=14, prezzo_max=150000, now="2026-07-05T07:00:00")
 
 
+def test_perizia_illeggibile_diventa_verifica_non_errore(monkeypatch):
+    """Se il modello non restituisce JSON valido (nemmeno in escalation),
+    _analizza_lotto NON deve sollevare (→ ritentato all'infinito): il lotto va
+    segnalato per lettura manuale, così non si perde l'occasione."""
+    from types import SimpleNamespace
+    from pathlib import Path
+
+    allegato = SimpleNamespace(is_perizia=True, nome_file="perizia.pdf")
+    client = SimpleNamespace(dettaglio_vendita=lambda _id: {"any": "detail"})
+    monkeypatch.setattr(main_mod, "parse_allegati", lambda _d: [allegato])
+    monkeypatch.setattr(main_mod, "scarica_allegati",
+                        lambda *a, **k: [Path("perizia.pdf")])
+    monkeypatch.setattr(main_mod, "estrai_testo",
+                        lambda *a, **k: SimpleNamespace(testo="testo perizia", metodo="ocr"))
+
+    def _boom(*a, **k):
+        raise ValueError("nessun oggetto JSON nella risposta del modello")
+    monkeypatch.setattr(main_mod, "estrai_perizia", _boom)
+
+    lotto = SimpleNamespace(id_esterno="4571692", id=1, comune="Fossalta", prezzo_base=80000.0)
+    esito = main_mod._analizza_lotto(lotto, client, None, {"hard": {}}, "raw", 80)
+    assert esito.codice() == 2  # VERIFICA (da_verificare), non un errore propagato
+
+
 def test_lotto_scartato_non_si_notifica_ma_resta_analizzato(conn, monkeypatch):
     monkeypatch.setattr(main_mod, "_analizza_lotto", _stub_analisi)
     target = TargetGeo(province_intere={"venezia"}, solo_residenziale=True)

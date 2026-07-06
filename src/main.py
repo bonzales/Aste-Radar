@@ -16,6 +16,7 @@ import sys
 from datetime import date, datetime
 
 import anthropic
+from pydantic import ValidationError
 
 from src import db
 from src.config import carica_target
@@ -55,7 +56,15 @@ def _analizza_lotto(lotto, client, ai_client, griglia, dir_raw, max_pagine_ocr) 
         return Esito(passa=False, sconto=None, punteggio=None,
                      da_verificare=["perizia illeggibile"])
 
-    dati: PeriziaEstratta = estrai_perizia(ai_client, testo.testo)
+    try:
+        dati: PeriziaEstratta = estrai_perizia(ai_client, testo.testo)
+    except (ValueError, ValidationError):
+        # Perizia illeggibile dal modello (JSON non valido anche dopo escalation).
+        # NON perdere il lotto e NON ritentarlo all'infinito (§ non perdere
+        # occasioni): segnalalo per lettura manuale. Diverso da un errore di rete,
+        # che invece propaga e viene ri-tentato al giro dopo.
+        return Esito(passa=False, sconto=None, punteggio=None,
+                     da_verificare=["perizia non interpretabile dal modello — leggere a mano"])
     esito = valuta(lotto, dati, griglia)
 
     # Livello 3: se abilitato e il lotto è interessante (passa/verifica), stima il
