@@ -64,9 +64,11 @@ class _FakeMessages:
     def __init__(self, per_modello):
         self.per_modello = per_modello
         self.modelli_chiamati = []
+        self.ultimi_kwargs = {}
 
     def create(self, model, **kwargs):
         self.modelli_chiamati.append(model)
+        self.ultimi_kwargs = kwargs
         return _FakeResp(self.per_modello[model])
 
 
@@ -109,3 +111,27 @@ def test_escalation_disabilitata_non_richiama():
     risultato = estrai_perizia(client, "testo", modello_escalation=None)
     assert client.messages.modelli_chiamati == [MODELLO_BASE]
     assert risultato.valore_stima == 100000.0
+
+
+def test_verifica_ai_fa_una_chiamata_minima():
+    from src.extractor import verifica_ai
+    per_modello = {MODELLO_BASE: PeriziaEstratta()}
+    client = _FakeClient(per_modello)
+    verifica_ai(client)  # non deve sollevare
+    assert client.messages.modelli_chiamati == [MODELLO_BASE]
+    # preflight economico: max 1 token
+    assert client.messages.ultimi_kwargs["max_tokens"] == 1
+
+
+def test_verifica_ai_propaga_errore_chiave():
+    class _Boom:
+        def create(self, model, **kwargs):
+            raise RuntimeError("401 authentication_error")
+
+    class _ClientBoom:
+        messages = _Boom()
+
+    from src.extractor import verifica_ai
+    import pytest
+    with pytest.raises(RuntimeError, match="authentication_error"):
+        verifica_ai(_ClientBoom())

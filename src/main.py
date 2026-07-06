@@ -20,7 +20,7 @@ import anthropic
 from src import db
 from src.config import carica_target
 from src.downloader import parse_allegati, scarica_allegati
-from src.extractor import PeriziaEstratta, estrai_perizia
+from src.extractor import PeriziaEstratta, estrai_perizia, verifica_ai
 from src.flip import calcola_margine, flip_abilitato
 from src.notifier import TelegramNotifier, leggi_secrets
 from src.parser import estrai_testo
@@ -126,7 +126,25 @@ def main() -> int:
         prezzo_max = (griglia.get("hard") or {}).get("prezzo_base_max")
 
         notifier = TelegramNotifier.da_secrets(secrets)
-        ai_client = anthropic.Anthropic(api_key=secrets.get("ANTHROPIC_API_KEY"))
+
+        # Preflight della chiave IA: falla SUBITO (in secondi) se la chiave è
+        # assente/errata, invece di scoprirlo perizia per perizia dopo ore di OCR.
+        # Una chiave incollata a mano può contenere trattini "lunghi" (–, non-ASCII)
+        # al posto di "-": l'httpx della SDK non può metterla nell'header. La
+        # intercettiamo con un messaggio chiaro invece dell'oscuro UnicodeEncodeError.
+        chiave = secrets.get("ANTHROPIC_API_KEY") or ""
+        if not chiave:
+            raise RuntimeError("ANTHROPIC_API_KEY mancante in config/secrets.env")
+        if not chiave.isascii():
+            raise RuntimeError(
+                "ANTHROPIC_API_KEY contiene caratteri non-ASCII (probabile "
+                "trattino 'lungo' da copia-incolla): riscrivi la chiave a mano"
+            )
+        ai_client = anthropic.Anthropic(api_key=chiave)
+        try:
+            verifica_ai(ai_client)
+        except Exception as exc:
+            raise RuntimeError(f"chiave IA non valida o IA irraggiungibile: {exc}") from exc
 
         conn = db.connect(DB_PATH)
         db.init_db(conn)

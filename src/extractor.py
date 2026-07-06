@@ -132,6 +132,17 @@ def serve_escalation(estratta: PeriziaEstratta) -> bool:
     return conta_campi_sostanziali(estratta) < SOGLIA_ESCALATION
 
 
+def verifica_ai(client, modello: str = MODELLO_BASE) -> None:
+    """Preflight della chiave/connessione IA: una chiamata minima (1 token) che
+    fallisce SUBITO se la chiave è errata o irraggiungibile, invece di scoprirlo
+    lotto per lotto dopo ore di OCR (fail loud precoce, CLAUDE.md §1.4)."""
+    client.messages.create(
+        model=modello,
+        max_tokens=1,
+        messages=[{"role": "user", "content": "ping"}],
+    )
+
+
 def _estrai_con_modello(client, testo_perizia: str, modello: str) -> PeriziaEstratta:
     resp = client.messages.create(
         model=modello,
